@@ -12,14 +12,14 @@ export default function BatchesPage() {
   const [batches, setBatches] = useState<Batch[]>([]);
   const [loading, setLoading] = useState(true);
   const [name, setName] = useState("");
-  const [year, setYear] = useState(new Date().getFullYear());
-  const [batchNum, setBatchNum] = useState(1);
-  const [groupCount, setGroupCount] = useState(6);
+  const [year, setYear] = useState<number | "">(new Date().getFullYear());
+  const [batchNum, setBatchNum] = useState<number | "">(1);
+  const [groupCount, setGroupCount] = useState<number | "">(6);
   const [creating, setCreating] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
-  const [editYear, setEditYear] = useState(new Date().getFullYear());
-  const [editBatchNum, setEditBatchNum] = useState(1);
-  const [editGroupCount, setEditGroupCount] = useState(6);
+  const [editYear, setEditYear] = useState<number | "">(new Date().getFullYear());
+  const [editBatchNum, setEditBatchNum] = useState<number | "">(1);
+  const [editGroupCount, setEditGroupCount] = useState<number | "">(6);
   const [updating, setUpdating] = useState(false);
   const [error, setError] = useState("");
 
@@ -149,7 +149,7 @@ export default function BatchesPage() {
               type="number" 
               className="input" 
               value={year} 
-              onChange={(e) => setYear(parseInt(e.target.value))} 
+              onChange={(e) => setYear(e.target.value === '' ? '' : parseInt(e.target.value))} 
               min={2020} max={2100}
               required
             />
@@ -160,7 +160,7 @@ export default function BatchesPage() {
               type="number" 
               className="input" 
               value={batchNum} 
-              onChange={(e) => setBatchNum(parseInt(e.target.value))} 
+              onChange={(e) => setBatchNum(e.target.value === '' ? '' : parseInt(e.target.value))} 
               min={1}
               required
             />
@@ -171,7 +171,7 @@ export default function BatchesPage() {
               type="number" 
               className="input" 
               value={groupCount} 
-              onChange={(e) => setGroupCount(parseInt(e.target.value))} 
+              onChange={(e) => setGroupCount(e.target.value === '' ? '' : parseInt(e.target.value))} 
               min={1}
               required
             />
@@ -213,7 +213,7 @@ export default function BatchesPage() {
                         type="number" 
                         className="input input-sm h-10" 
                         value={editYear} 
-                        onChange={(e) => setEditYear(parseInt(e.target.value))} 
+                        onChange={(e) => setEditYear(e.target.value === '' ? '' : parseInt(e.target.value))} 
                         required
                       />
                     </div>
@@ -223,7 +223,7 @@ export default function BatchesPage() {
                         type="number" 
                         className="input input-sm h-10" 
                         value={editBatchNum} 
-                        onChange={(e) => setEditBatchNum(parseInt(e.target.value))} 
+                        onChange={(e) => setEditBatchNum(e.target.value === '' ? '' : parseInt(e.target.value))} 
                         required
                       />
                     </div>
@@ -234,7 +234,7 @@ export default function BatchesPage() {
                       type="number" 
                       className="input input-sm h-10" 
                       value={editGroupCount} 
-                      onChange={(e) => setEditGroupCount(parseInt(e.target.value))} 
+                      onChange={(e) => setEditGroupCount(e.target.value === '' ? '' : parseInt(e.target.value))} 
                       required
                       min={1}
                     />

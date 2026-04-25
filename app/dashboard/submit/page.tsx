@@ -181,7 +181,7 @@ export default function SubmissionPage() {
           
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div>
-              <label className="label flex items-center gap-2" htmlFor="github">
+              <label className="flex items-center gap-1.5 mb-1.5 text-[0.85rem] font-medium text-text-primary" htmlFor="github">
                 <FaGithub className="text-emerald" size={14} /> GitHub URL <span className="text-rose-500">*</span>
               </label>
               <div className="relative mt-1">
@@ -199,7 +199,7 @@ export default function SubmissionPage() {
             </div>
 
             <div>
-              <label className="label flex items-center gap-2" htmlFor="website">
+              <label className="flex items-center gap-1.5 mb-1.5 text-[0.85rem] font-medium text-text-primary" htmlFor="website">
                 <FaLink className="text-emerald" size={14} /> Website URL (Optional)
               </label>
               <div className="relative mt-1">
@@ -216,7 +216,7 @@ export default function SubmissionPage() {
             </div>
 
             <div className="md:col-span-2">
-              <label className="label flex items-center gap-2" htmlFor="youtube">
+              <label className="flex items-center gap-1.5 mb-1.5 text-[0.85rem] font-medium text-text-primary" htmlFor="youtube">
                 <FaYoutube className="text-emerald" size={14} /> YouTube Demo Link (Optional)
               </label>
               <div className="relative mt-1">

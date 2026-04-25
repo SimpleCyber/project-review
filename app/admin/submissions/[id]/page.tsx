@@ -9,7 +9,6 @@ import {
   FaArrowLeft, FaGithub, FaLink, FaFilePdf, FaYoutube, 
   FaCalendarAlt, FaUserGraduate, FaLayerGroup, FaImage, FaUserFriends, FaEnvelope, FaIdCard 
 } from "react-icons/fa";
-import CommentPanel from "@/components/CommentPanel";
 
 export default function SubmissionDetail() {
   const { id } = useParams();
@@ -209,7 +208,6 @@ export default function SubmissionDetail() {
             )}
           </div>
 
-          <CommentPanel submissionId={id as string} />
 
           <div className="glass-card p-6">
             <h3 className="text-lg font-bold mb-4">Internal Stats</h3>

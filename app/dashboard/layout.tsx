@@ -128,20 +128,7 @@ export default function StudentLayout({ children }: { children: React.ReactNode 
               <span>Submit Project</span>
             </Link>
 
-            <div className="pt-4 mt-4 border-t border-white/5">
-              <Link
-                href="/dashboard/chat"
-                onClick={() => setSidebarOpen(false)}
-                className={`flex items-center gap-3 px-4 py-3 rounded-xl transition-all ${
-                  pathname === "/dashboard/chat"
-                    ? "bg-emerald text-white shadow-lg shadow-emerald/20" 
-                    : "text-white/70 hover:bg-white/10 hover:text-white"
-                }`}
-              >
-                <FaComments size={16} className={pathname === "/dashboard/chat" ? "text-white" : "text-white/50"} />
-                <span>Chat & Feedback</span>
-              </Link>
-            </div>
+
           </nav>
 
           <div className="mt-auto pt-4 pb-2">
