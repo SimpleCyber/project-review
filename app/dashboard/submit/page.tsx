@@ -12,6 +12,7 @@ import {
   FaGithub, FaLink, FaYoutube, FaCloudUploadAlt, FaFilePdf, 
   FaTimes, FaImage, FaCheckCircle, FaExclamationTriangle, FaTrash 
 } from "react-icons/fa";
+import ConfirmationModal from "@/components/ConfirmationModal";
 
 export default function SubmissionPage() {
   const { studentData } = useAuth();
@@ -32,6 +33,10 @@ export default function SubmissionPage() {
   
   // Uploading state
   const [uploading, setUploading] = useState<string | null>(null);
+
+  // Deletion State
+  const [deleteType, setDeleteType] = useState<"screenshot" | "paper" | null>(null);
+  const [indexToDelete, setIndexToDelete] = useState<number | null>(null);
 
   useEffect(() => {
     async function fetchData() {
@@ -122,7 +127,18 @@ export default function SubmissionPage() {
   };
 
   const removeScreenshot = (index: number) => {
-    setScreenshots(prev => prev.filter((_, i) => i !== index));
+    setIndexToDelete(index);
+    setDeleteType("screenshot");
+  };
+
+  const confirmDelete = () => {
+    if (deleteType === "screenshot" && indexToDelete !== null) {
+      setScreenshots(prev => prev.filter((_, i) => i !== indexToDelete));
+    } else if (deleteType === "paper") {
+      setPaperUrl("");
+    }
+    setDeleteType(null);
+    setIndexToDelete(null);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -331,7 +347,7 @@ export default function SubmissionPage() {
                 </div>
                 {!isLocked && (
                   <button 
-                    onClick={() => setPaperUrl("")}
+                    onClick={() => setDeleteType("paper")}
                     className="text-text-muted hover:text-rose-400 p-2"
                   >
                     <FaTimes />
@@ -383,6 +399,17 @@ export default function SubmissionPage() {
           </div>
         )}
       </form>
+
+      <ConfirmationModal
+        isOpen={deleteType !== null}
+        title={`Remove ${deleteType === "screenshot" ? "Screenshot" : "Research Paper"}?`}
+        message={`Are you sure you want to remove this ${deleteType === "screenshot" ? "screenshot" : "research paper document"}? This cannot be undone.`}
+        onConfirm={confirmDelete}
+        onCancel={() => {
+          setDeleteType(null);
+          setIndexToDelete(null);
+        }}
+      />
     </div>
   );
 }

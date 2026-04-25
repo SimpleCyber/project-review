@@ -29,7 +29,7 @@ export default function LandingPage() {
         <div className="animate-fade-in">
           <h1 className="text-5xl md:text-7xl font-extrabold mb-6 transition-all">
             Streamline Your <br />
-            <span className="text-transparent bg-clip-text gradient-accent">Final Year Projects</span>
+            <span className="text-gradient gradient-accent">Final Year Projects</span>
           </h1>
           <p className="text-lg md:text-xl text-secondary max-w-2xl mx-auto mb-10 leading-relaxed">
             The all-in-one platform for students to submit work and faculty to track progress, 

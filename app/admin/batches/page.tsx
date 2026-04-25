@@ -7,6 +7,7 @@ import {
 } from "firebase/firestore";
 import { Batch } from "@/lib/types";
 import { FaPlus, FaLock, FaUnlock, FaTrash, FaCalendarAlt, FaCheckCircle, FaExclamationCircle, FaEdit, FaTimes, FaSave } from "react-icons/fa";
+import ConfirmationModal from "@/components/ConfirmationModal";
 
 export default function BatchesPage() {
   const [batches, setBatches] = useState<Batch[]>([]);
@@ -22,6 +23,10 @@ export default function BatchesPage() {
   const [editGroupCount, setEditGroupCount] = useState<number | "">(6);
   const [updating, setUpdating] = useState(false);
   const [error, setError] = useState("");
+  
+  // Deletion State
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [batchToDelete, setBatchToDelete] = useState<Batch | null>(null);
 
   const fetchBatches = async () => {
     setLoading(true);
@@ -118,13 +123,21 @@ export default function BatchesPage() {
     }
   };
 
-  const deleteBatch = async (batchId: string) => {
-    if (!confirm("Are you sure? This will not delete students but they won't be able to edit submissions if this batch is gone.")) return;
+  const deleteBatch = (batch: Batch) => {
+    setBatchToDelete(batch);
+    setIsDeleteModalOpen(true);
+  };
+
+  const confirmDeleteBatch = async () => {
+    if (!batchToDelete) return;
     try {
-      await deleteDoc(doc(db, "batches", batchId));
-      setBatches(batches.filter(b => b.id !== batchId));
+      await deleteDoc(doc(db, "batches", batchToDelete.id));
+      setBatches(batches.filter(b => b.id !== batchToDelete.id));
+      setIsDeleteModalOpen(false);
+      setBatchToDelete(null);
     } catch (err) {
       console.error("Error deleting batch:", err);
+      setError("Failed to delete batch.");
     }
   };
 
@@ -288,7 +301,7 @@ export default function BatchesPage() {
                       {batch.isLocked ? <><FaUnlock size={14} /> Unlock Batch</> : <><FaLock size={14} /> Lock Batch</>}
                     </button>
                     <button 
-                      onClick={() => deleteBatch(batch.id)}
+                      onClick={() => deleteBatch(batch)}
                       className="w-10 rounded-xl bg-white border border-gray-200 shadow-sm flex items-center justify-center text-rose-500 hover:bg-rose-50 hover:border-rose-200 transition-all"
                       title="Delete Batch"
                     >
@@ -309,6 +322,17 @@ export default function BatchesPage() {
           Useful for hard deadlines.
         </p>
       </div>
+
+      <ConfirmationModal
+        isOpen={isDeleteModalOpen}
+        title="Delete Batch?"
+        message={`Are you sure you want to delete "${batchToDelete?.name}"? Students in this batch will no longer be able to submit or edit their projects.`}
+        onConfirm={confirmDeleteBatch}
+        onCancel={() => {
+          setIsDeleteModalOpen(false);
+          setBatchToDelete(null);
+        }}
+      />
     </div>
   );
 }

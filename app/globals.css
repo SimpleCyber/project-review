@@ -56,7 +56,14 @@ body {
 }
 
 .gradient-accent {
-  background: var(--accent);
+  background: linear-gradient(135deg, var(--accent) 0%, #3b82f6 100%);
+}
+
+.text-gradient {
+  background-clip: text;
+  -webkit-background-clip: text;
+  color: transparent;
+  display: inline-block;
 }
 
 .gradient-emerald {

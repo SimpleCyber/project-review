@@ -14,6 +14,7 @@ import {
   FaExclamationTriangle, FaArrowLeft, FaUserCircle, FaSpinner
 } from "react-icons/fa";
 import Link from "next/link";
+import ConfirmationModal from "@/components/ConfirmationModal";
 
 export default function ProfilePage() {
   const { studentData } = useAuth();
@@ -27,6 +28,8 @@ export default function ProfilePage() {
 
   const [members, setMembers] = useState<ProjectMember[]>([]);
   const [uploadingIndex, setUploadingIndex] = useState<number | null>(null);
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [indexToDelete, setIndexToDelete] = useState<number | null>(null);
 
   useEffect(() => {
     async function fetchData() {
@@ -96,7 +99,16 @@ export default function ProfilePage() {
   };
 
   const removeMember = (index: number) => {
-    setMembers(members.filter((_, i) => i !== index));
+    setIndexToDelete(index);
+    setIsDeleteModalOpen(true);
+  };
+
+  const confirmDeleteMember = () => {
+    if (indexToDelete !== null) {
+      setMembers(members.filter((_, i) => i !== indexToDelete));
+      setIndexToDelete(null);
+    }
+    setIsDeleteModalOpen(false);
   };
 
   const updateMember = (index: number, field: keyof ProjectMember, value: string) => {
@@ -328,6 +340,14 @@ export default function ProfilePage() {
           This batch is locked. You cannot modify group members at this time.
         </div>
       )}
+
+      <ConfirmationModal
+        isOpen={isDeleteModalOpen}
+        title="Remove Member?"
+        message={`Are you sure you want to remove ${indexToDelete !== null ? members[indexToDelete]?.fullName || "this member" : "this member"} from the group?`}
+        onConfirm={confirmDeleteMember}
+        onCancel={() => setIsDeleteModalOpen(false)}
+      />
     </div>
   );
 }
