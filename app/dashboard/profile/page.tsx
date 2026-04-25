@@ -223,86 +223,80 @@ export default function ProfilePage() {
               {/* Form Column */}
               <div className="flex-1 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 <div className="space-y-1">
-                  <label className="label text-[10px] uppercase font-black text-text-muted">Full Name *</label>
-                  <div className="relative">
-                    <FaUserGraduate className="absolute left-3 top-1/2 -translate-y-1/2 text-text-muted" size={12} />
-                    <input 
-                      type="text" 
-                      placeholder="e.g. John Doe"
-                      className="input input-sm pl-9"
-                      value={member.fullName}
-                      onChange={(e) => updateMember(index, "fullName", e.target.value)}
-                    />
-                  </div>
+                  <label className="flex items-center gap-1.5 mb-1.5 text-[10px] uppercase font-black text-text-muted">
+                    <FaUserGraduate size={12} className="text-emerald-500" /> Full Name *
+                  </label>
+                  <input 
+                    type="text" 
+                    placeholder="e.g. John Doe"
+                    className="input input-sm"
+                    value={member.fullName}
+                    onChange={(e) => updateMember(index, "fullName", e.target.value)}
+                  />
                 </div>
 
                 <div className="space-y-1">
-                  <label className="label text-[10px] uppercase font-black text-text-muted">College Email *</label>
-                  <div className="relative">
-                    <FaEnvelope className="absolute left-3 top-1/2 -translate-y-1/2 text-text-muted" size={12} />
-                    <input 
-                      type="email" 
-                      placeholder="college@edu.com"
-                      className="input input-sm pl-9"
-                      value={member.collegeEmail}
-                      onChange={(e) => updateMember(index, "collegeEmail", e.target.value)}
-                    />
-                  </div>
+                  <label className="flex items-center gap-1.5 mb-1.5 text-[10px] uppercase font-black text-text-muted">
+                    <FaEnvelope size={12} className="text-rose-500" /> College Email *
+                  </label>
+                  <input 
+                    type="email" 
+                    placeholder="college@edu.com"
+                    className="input input-sm"
+                    value={member.collegeEmail}
+                    onChange={(e) => updateMember(index, "collegeEmail", e.target.value)}
+                  />
                 </div>
 
                 <div className="space-y-1">
-                  <label className="label text-[10px] uppercase font-black text-text-muted">Personal Email</label>
-                  <div className="relative">
-                    <FaEnvelope className="absolute left-3 top-1/2 -translate-y-1/2 opacity-50 text-text-muted" size={12} />
-                    <input 
-                      type="email" 
-                      placeholder="personal@mail.com"
-                      className="input input-sm pl-9"
-                      value={member.personalEmail}
-                      onChange={(e) => updateMember(index, "personalEmail", e.target.value)}
-                    />
-                  </div>
+                  <label className="flex items-center gap-1.5 mb-1.5 text-[10px] uppercase font-black text-text-muted">
+                    <FaEnvelope size={12} className="text-blue-500" /> Personal Email
+                  </label>
+                  <input 
+                    type="email" 
+                    placeholder="personal@mail.com"
+                    className="input input-sm"
+                    value={member.personalEmail}
+                    onChange={(e) => updateMember(index, "personalEmail", e.target.value)}
+                  />
                 </div>
 
                 <div className="space-y-1">
-                  <label className="label text-[10px] uppercase font-black text-text-muted">Phone Number</label>
-                  <div className="relative">
-                    <FaPhone className="absolute left-3 top-1/2 -translate-y-1/2 text-text-muted" size={12} />
-                    <input 
-                      type="tel" 
-                      placeholder="+91 00000 00000"
-                      className="input input-sm pl-9"
-                      value={member.phoneNumber}
-                      onChange={(e) => updateMember(index, "phoneNumber", e.target.value)}
-                    />
-                  </div>
+                  <label className="flex items-center gap-1.5 mb-1.5 text-[10px] uppercase font-black text-text-muted">
+                    <FaPhone size={12} className="text-amber-500" /> Phone Number
+                  </label>
+                  <input 
+                    type="tel" 
+                    placeholder="+91 00000 00000"
+                    className="input input-sm"
+                    value={member.phoneNumber}
+                    onChange={(e) => updateMember(index, "phoneNumber", e.target.value)}
+                  />
                 </div>
 
                 <div className="space-y-1">
-                  <label className="label text-[10px] uppercase font-black text-text-muted">Registration # *</label>
-                  <div className="relative">
-                    <FaIdCard className="absolute left-3 top-1/2 -translate-y-1/2 text-text-muted" size={12} />
-                    <input 
-                      type="text" 
-                      placeholder="e.g. 2026CS101"
-                      className="input input-sm pl-9"
-                      value={member.registrationNumber}
-                      onChange={(e) => updateMember(index, "registrationNumber", e.target.value)}
-                    />
-                  </div>
+                  <label className="flex items-center gap-1.5 mb-1.5 text-[10px] uppercase font-black text-text-muted">
+                    <FaIdCard size={12} className="text-purple-500" /> Registration # *
+                  </label>
+                  <input 
+                    type="text" 
+                    placeholder="e.g. 2026CS101"
+                    className="input input-sm"
+                    value={member.registrationNumber}
+                    onChange={(e) => updateMember(index, "registrationNumber", e.target.value)}
+                  />
                 </div>
 
                 <div className="space-y-1">
-                  <label className="label text-[10px] uppercase font-black text-text-muted">Date of Birth</label>
-                  <div className="relative">
-                    <FaCalendarAlt className="absolute left-3 top-1/2 -translate-y-1/2 text-text-muted" size={12} />
-                    <input 
-                      type="date" 
-                      className="input input-sm pl-9"
-                      value={member.dateOfBirth}
-                      onChange={(e) => updateMember(index, "dateOfBirth", e.target.value)}
-                    />
-                  </div>
+                  <label className="flex items-center gap-1.5 mb-1.5 text-[10px] uppercase font-black text-text-muted">
+                    <FaCalendarAlt size={12} className="text-teal-500" /> Date of Birth
+                  </label>
+                  <input 
+                    type="date" 
+                    className="input input-sm"
+                    value={member.dateOfBirth}
+                    onChange={(e) => updateMember(index, "dateOfBirth", e.target.value)}
+                  />
                 </div>
               </div>
             </div>

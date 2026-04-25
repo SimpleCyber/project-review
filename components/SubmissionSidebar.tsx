@@ -103,7 +103,7 @@ export default function SubmissionSidebar({ isOpen, onClose, submission, student
                <div className="space-y-4">
                  <div className="aspect-[16/10] bg-gray-50 rounded-xl overflow-hidden border border-gray-200">
                    <iframe 
-                     src={`https://docs.google.com/viewer?url=${encodeURIComponent(submission.researchPaperUrl)}&embedded=true`}
+                     src={`${submission.researchPaperUrl}#view=FitH`}
                      className="w-full h-full border-none"
                      title="Research Paper PDF"
                    />

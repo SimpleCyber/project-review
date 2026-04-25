@@ -187,7 +187,7 @@ export default function SubmissionDetail() {
               <div className="space-y-4">
                 <div className="aspect-[3/4] bg-bg-primary rounded-xl overflow-hidden border border-border relative group">
                   <iframe 
-                    src={`https://docs.google.com/viewer?url=${encodeURIComponent(submission.researchPaperUrl)}&embedded=true`}
+                    src={`${submission.researchPaperUrl}#view=FitH`}
                     className="w-full h-full border-none"
                     title="Research Paper PDF"
                   />

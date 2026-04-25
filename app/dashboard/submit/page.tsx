@@ -89,6 +89,33 @@ export default function SubmissionPage() {
     }
   };
 
+  const handleMultipleImageUploads = async (files: File[]) => {
+    setUploading("screenshot");
+    setError("");
+    
+    // Cap at remaining capacity
+    const availableSlots = 6 - screenshots.length;
+    const filesToUpload = files.slice(0, availableSlots);
+
+    try {
+      const uploadPromises = filesToUpload.map(async (file) => {
+        const formData = new FormData();
+        formData.append("file", file);
+        const res = await fetch("/api/cloudinary/upload", { method: "POST", body: formData });
+        const data = await res.json();
+        if (data.error) throw new Error(data.error);
+        return data.url;
+      });
+
+      const urls = await Promise.all(uploadPromises);
+      setScreenshots(prev => [...prev, ...urls]);
+    } catch (err: any) {
+      setError(err.message || "Failed to upload one or more images.");
+    } finally {
+      setUploading(null);
+    }
+  };
+
   const removeScreenshot = (index: number) => {
     setScreenshots(prev => prev.filter((_, i) => i !== index));
   };
@@ -263,7 +290,12 @@ export default function SubmissionPage() {
                     type="file" 
                     className="hidden" 
                     accept="image/*"
-                    onChange={(e) => e.target.files?.[0] && handleFileUpload(e.target.files[0], "image")}
+                    multiple
+                    onChange={(e) => {
+                      if (e.target.files && e.target.files.length > 0) {
+                        handleMultipleImageUploads(Array.from(e.target.files));
+                      }
+                    }}
                     disabled={uploading === "screenshot"}
                   />
                   {uploading === "screenshot" ? <div className="spinner" /> : <><FaPlus className="text-text-muted mb-1" /><span className="text-[10px] text-text-muted font-bold uppercase">Add</span></>}

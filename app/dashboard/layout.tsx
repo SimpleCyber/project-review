@@ -11,17 +11,23 @@ import { db } from "@/lib/firebase";
 import { doc, getDoc } from "firebase/firestore";
 
 export default function StudentLayout({ children }: { children: React.ReactNode }) {
-  const { user, studentData, loading, logout } = useAuth();
+  const { user, studentData, loading, logout, isAdmin } = useAuth();
   const router = useRouter();
   const pathname = usePathname();
   const [isSidebarOpen, setSidebarOpen] = useState(false);
   const [batchName, setBatchName] = useState("");
 
   useEffect(() => {
-    if (!loading && (!user || studentData === null)) {
-      router.push("/login");
+    if (!loading) {
+      if (!user) {
+        router.push("/");
+      } else if (isAdmin) {
+        router.push("/admin");
+      } else if (studentData === null) {
+        router.push("/");
+      }
     }
-  }, [user, studentData, loading, router]);
+  }, [user, studentData, isAdmin, loading, router]);
 
   useEffect(() => {
     if (studentData?.batchId) {
