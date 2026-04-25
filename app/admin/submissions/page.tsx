@@ -5,26 +5,37 @@ import { db } from "@/lib/firebase";
 import { collection, query, getDocs, orderBy, where } from "firebase/firestore";
 import { Submission, Batch, Student } from "@/lib/types";
 import { FaFilter, FaSearch, FaEye, FaGithub, FaLink, FaLayerGroup } from "react-icons/fa";
-import Link from "next/link";
+import SubmissionSidebar from "@/components/SubmissionSidebar";
 
 export default function SubmissionsOverview() {
   const [submissions, setSubmissions] = useState<Submission[]>([]);
   const [batches, setBatches] = useState<Batch[]>([]);
+  const [students, setStudents] = useState<Record<string, Student>>({});
   const [loading, setLoading] = useState(true);
   const [filterBatch, setFilterBatch] = useState("all");
   const [searchQuery, setSearchQuery] = useState("");
+  
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [selectedSubmission, setSelectedSubmission] = useState<Submission | null>(null);
 
   useEffect(() => {
     async function fetchData() {
       setLoading(true);
       try {
-        const [subSnap, batchSnap] = await Promise.all([
+        const [subSnap, batchSnap, studentSnap] = await Promise.all([
           getDocs(query(collection(db, "submissions"), orderBy("updatedAt", "desc"))),
-          getDocs(query(collection(db, "batches"), orderBy("year", "desc")))
+          getDocs(query(collection(db, "batches"), orderBy("year", "desc"))),
+          getDocs(collection(db, "students"))
         ]);
         
         setSubmissions(subSnap.docs.map(doc => ({ id: doc.id, ...doc.data() } as Submission)));
         setBatches(batchSnap.docs.map(doc => ({ id: doc.id, ...doc.data() } as Batch)));
+        
+        const studentsMap: Record<string, Student> = {};
+        studentSnap.docs.forEach(doc => {
+          studentsMap[doc.id] = { id: doc.id, ...doc.data() } as Student;
+        });
+        setStudents(studentsMap);
       } catch (err) {
         console.error("Error fetching admin submissions:", err);
       } finally {
@@ -40,6 +51,11 @@ export default function SubmissionsOverview() {
                           s.groupId.toLowerCase().includes(searchQuery.toLowerCase());
     return matchesBatch && matchesSearch;
   });
+
+  const handleReviewClick = (sub: Submission) => {
+    setSelectedSubmission(sub);
+    setSidebarOpen(true);
+  };
 
   return (
     <div className="space-y-8 animate-fade-in">
@@ -117,9 +133,12 @@ export default function SubmissionsOverview() {
                   </td>
                   <td className="text-xs">{new Date(sub.updatedAt).toLocaleString()}</td>
                   <td>
-                    <Link href={`/admin/submissions/${sub.id}`} className="btn btn-secondary btn-sm gap-2">
+                    <button 
+                      onClick={() => handleReviewClick(sub)}
+                      className="btn btn-secondary btn-sm gap-2"
+                    >
                       <FaEye size={14} /> Review
-                    </Link>
+                    </button>
                   </td>
                 </tr>
               ))
@@ -127,6 +146,14 @@ export default function SubmissionsOverview() {
           </tbody>
         </table>
       </div>
+
+      <SubmissionSidebar 
+        isOpen={sidebarOpen} 
+        onClose={() => setSidebarOpen(false)} 
+        submission={selectedSubmission!} 
+        student={selectedSubmission ? students[selectedSubmission.studentId] : undefined}
+        batch={selectedSubmission ? batches.find(b => b.id === selectedSubmission.batchId) : undefined}
+      />
     </div>
   );
 }

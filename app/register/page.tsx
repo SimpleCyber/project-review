@@ -4,10 +4,11 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { useAuth } from "@/lib/AuthContext";
-import { FaGraduationCap, FaLock, FaUser, FaUsers, FaLayerGroup, FaEnvelope, FaGoogle } from "react-icons/fa";
+import { FaGraduationCap, FaUser, FaEnvelope, FaLock, FaLayerGroup, FaUsers } from "react-icons/fa";
+import { FcGoogle } from "react-icons/fc";
 import { db } from "@/lib/firebase";
 import { collection, query, getDocs, orderBy } from "firebase/firestore";
-import { Batch, GROUP_IDS, GroupId } from "@/lib/types";
+import { Batch } from "@/lib/types";
 
 export default function RegisterPage() {
   const [name, setName] = useState("");
@@ -101,113 +102,132 @@ export default function RegisterPage() {
   };
 
   return (
-    <div className="min-h-screen gradient-bg flex items-center justify-center p-6 py-12">
-      <div className="w-full max-w-lg glass-card p-8 animate-fade-in">
-        <div className="flex flex-col items-center mb-8">
-          <div className="w-12 h-12 gradient-accent rounded-xl flex items-center justify-center text-white shadow-lg mb-4">
-            <FaGraduationCap size={28} />
+    <div className="min-h-screen flex bg-bg-secondary text-text-primary">
+      {/* Left Side - Dark Cover */}
+      <div className="hidden lg:flex lg:w-1/2 lg:fixed lg:inset-y-0 lg:left-0 bg-sidebar text-white flex-col justify-between p-12 relative overflow-hidden">
+        <div className="absolute inset-0 bg-sidebar z-0 opacity-90"></div>
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-[#0A2045] to-[#051329] z-0 opacity-80"></div>
+        
+        <div className="relative z-10">
+          <div className="flex items-center gap-3 mb-16">
+            <div className="w-8 h-8 rounded bg-emerald text-white font-bold flex items-center justify-center">
+              <FaGraduationCap size={18} />
+            </div>
+            <span className="font-bold text-xl tracking-tight">ProjectReview</span>
           </div>
-          <h1 className="text-2xl font-bold">Student Registration</h1>
-          <p className="text-secondary text-sm mt-2">Create your account to submit your project</p>
+          
+          <div className="max-w-[480px] mt-24">
+            <h1 className="text-[3.5rem] font-bold mb-6 leading-[1.1] tracking-tight">Career Building<br />Reimagined.</h1>
+            <p className="text-slate-300 text-lg leading-relaxed">Join thousands of ambitious students and forward-thinking faculty building the future together through real-world projects and learning.</p>
+          </div>
         </div>
+        
+        <div className="relative z-10 text-sm text-slate-400 flex gap-6 mt-12">
+          <span>© 2026 ProjectReview Inc.</span>
+          <Link href="#" className="hover:text-white transition-colors">Privacy Policy</Link>
+          <Link href="#" className="hover:text-white transition-colors">Terms</Link>
+        </div>
+      </div>
 
-        {error && (
-          <div className="alert alert-error mb-6">
-            {error}
+      {/* Right Side - Form */}
+      <div className="w-full lg:w-1/2 lg:ml-[50%] flex flex-col items-center justify-center p-8 sm:p-12 min-h-screen">
+        <div className="w-full max-w-[480px] animate-fade-in py-8">
+          
+          <div className="flex lg:hidden items-center gap-3 mb-10">
+            <div className="w-8 h-8 rounded bg-emerald text-white font-bold flex items-center justify-center">
+              <FaGraduationCap size={18} />
+            </div>
+            <span className="font-bold text-xl tracking-tight text-sidebar">ProjectReview</span>
           </div>
-        )}
 
-        <form onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-2 gap-5">
-          <div className="md:col-span-2">
-            <label className="label" htmlFor="name">Full Name</label>
-            <div className="relative">
-              <span className="absolute left-4 top-1/2 -translate-y-1/2 text-text-muted">
-                <FaUser size={14} />
-              </span>
+          <div className="mb-8">
+            <h1 className="text-3xl font-extrabold text-sidebar mb-2 tracking-tight">Create an account</h1>
+            <p className="text-text-secondary">Enter your details to create your workspace.</p>
+          </div>
+
+          {error && (
+            <div className="alert alert-error mb-6">
+              {error}
+            </div>
+          )}
+
+          <form onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-2 gap-5">
+            <div className="md:col-span-2">
+              <label className="label text-sm font-semibold text-sidebar mb-1 flex items-center gap-2" htmlFor="name">
+                <FaUser className="text-emerald" size={14} /> Full Name
+              </label>
               <input
                 id="name"
                 type="text"
-                placeholder="e.g. John Doe"
-                className="input pl-11"
+                placeholder="John Doe"
+                className="input py-3 !bg-white !border-gray-200"
                 value={name}
                 onChange={(e) => setName(e.target.value)}
                 required
               />
             </div>
-          </div>
 
-          <div className="md:col-span-2">
-            <label className="label" htmlFor="email">Email Address</label>
-            <div className="relative">
-              <span className="absolute left-4 top-1/2 -translate-y-1/2 text-text-muted">
-                <FaEnvelope size={14} />
-              </span>
+            <div className="md:col-span-2">
+              <label className="label text-sm font-semibold text-sidebar mb-1 flex items-center gap-2" htmlFor="email">
+                <FaEnvelope className="text-emerald" size={14} /> Email Address
+              </label>
               <input
                 id="email"
                 type="email"
-                placeholder="e.g. john@university.edu"
-                className="input pl-11"
+                placeholder="john@university.edu"
+                className="input py-3 !bg-white !border-gray-200"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required
               />
             </div>
-          </div>
 
-          <div>
-            <label className="label" htmlFor="regId">Registration ID</label>
-            <div className="relative">
-              <span className="absolute left-4 top-1/2 -translate-y-1/2 text-text-muted">
-                <FaUser size={14} />
-              </span>
+            <div>
+              <label className="label text-sm font-semibold text-sidebar mb-1 flex items-center gap-2" htmlFor="regId">
+                <FaUser className="text-emerald" size={14} /> Registration ID
+              </label>
               <input
                 id="regId"
                 type="text"
-                placeholder="e.g. CS2026001"
-                className="input pl-11"
+                placeholder="CS2026001"
+                className="input py-3 !bg-white !border-gray-200"
                 value={regId}
                 onChange={(e) => setRegId(e.target.value)}
                 required
               />
             </div>
-          </div>
 
-          <div>
-            <label className="label" htmlFor="batch">Batch / Year</label>
-            <div className="relative">
-              <span className="absolute left-4 top-1/2 -translate-y-1/2 text-text-muted">
-                <FaLayerGroup size={14} />
-              </span>
+            <div>
+              <label className="label text-sm font-semibold text-sidebar mb-1 flex items-center gap-2" htmlFor="batch">
+                <FaLayerGroup className="text-emerald" size={14} /> Batch / Year
+              </label>
               <select
                 id="batch"
-                className="select pl-11"
+                className="select py-3 !bg-white !border-gray-200"
                 value={batchId}
                 onChange={(e) => handleBatchChange(e.target.value)}
                 required
                 disabled={fetchingBatches}
               >
                 {fetchingBatches ? (
-                  <option>Loading batches...</option>
+                  <option>Loading...</option>
                 ) : batches.length > 0 ? (
                   batches.map((b) => (
                     <option key={b.id} value={b.id}>{b.name}</option>
                   ))
                 ) : (
-                  <option value="">No batches available</option>
+                  <option value="">No batches</option>
                 )}
               </select>
             </div>
-          </div>
 
-          <div>
-            <label className="label" htmlFor="groupId">Group ID</label>
-            <div className="relative">
-              <span className="absolute left-4 top-1/2 -translate-y-1/2 text-text-muted">
-                <FaUsers size={14} />
-              </span>
+            <div className="md:col-span-2">
+              <label className="label text-sm font-semibold text-sidebar mb-1 flex items-center gap-2" htmlFor="groupId">
+                <FaUsers className="text-emerald" size={14} /> Group ID
+              </label>
               <select
                 id="groupId"
-                className="select pl-11"
+                className="select py-3 !bg-white !border-gray-200"
                 value={groupId}
                 onChange={(e) => setGroupId(e.target.value)}
                 required
@@ -217,80 +237,65 @@ export default function RegisterPage() {
                 ))}
               </select>
             </div>
-          </div>
 
-          <div className="hidden md:block" />
-
-          <div>
-            <label className="label" htmlFor="password">Create Password</label>
-            <div className="relative">
-              <span className="absolute left-4 top-1/2 -translate-y-1/2 text-text-muted">
-                <FaLock size={14} />
-              </span>
+            <div>
+              <label className="label text-sm font-semibold text-sidebar mb-1 flex items-center gap-2" htmlFor="password">
+                <FaLock className="text-emerald" size={14} /> Password
+              </label>
               <input
                 id="password"
                 type="password"
                 placeholder="••••••••"
-                className="input pl-11"
+                className="input py-3 !bg-white !border-gray-200"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 required
               />
             </div>
-          </div>
 
-          <div>
-            <label className="label" htmlFor="confirmPassword">Confirm Password</label>
-            <div className="relative">
-              <span className="absolute left-4 top-1/2 -translate-y-1/2 text-text-muted">
-                <FaLock size={14} />
-              </span>
+            <div>
+              <label className="label text-sm font-semibold text-sidebar mb-1 flex items-center gap-2" htmlFor="confirmPassword">
+                <FaLock className="text-emerald" size={14} /> Confirm Password
+              </label>
               <input
                 id="confirmPassword"
                 type="password"
                 placeholder="••••••••"
-                className="input pl-11"
+                className="input py-3 !bg-white !border-gray-200"
                 value={confirmPassword}
                 onChange={(e) => setConfirmPassword(e.target.value)}
                 required
               />
             </div>
+
+            <button
+              type="submit"
+              className="btn btn-primary md:col-span-2 py-3.5 mt-2 shadow-sm rounded-lg font-bold"
+              disabled={loading || fetchingBatches}
+            >
+              {loading ? <div className="spinner mx-auto" /> : "Sign Up"}
+            </button>
+          </form>
+
+          <div className="mt-8 flex items-center gap-4">
+            <div className="h-px bg-border flex-1" />
+            <span className="text-xs text-text-muted font-bold tracking-wider">OR CONTINUE WITH</span>
+            <div className="h-px bg-border flex-1" />
           </div>
 
           <button
-            type="submit"
-            className="btn btn-primary md:col-span-2 py-3 mt-4"
-            disabled={loading || fetchingBatches}
+            onClick={handleGoogleSignIn}
+            disabled={loading}
+            className="w-full py-3 mt-8 flex items-center justify-center gap-3 bg-white border border-gray-200 rounded-lg text-sidebar font-semibold hover:bg-gray-50 transition-colors shadow-sm"
           >
-            {loading ? <div className="spinner" /> : "Create Account"}
+            <FcGoogle size={20} />
+            Sign in with Google
           </button>
-        </form>
 
-        <div className="mt-6 flex items-center gap-4">
-          <div className="h-px bg-border flex-1" />
-          <span className="text-xs text-text-muted font-medium">OR</span>
-          <div className="h-px bg-border flex-1" />
-        </div>
-
-        <button
-          onClick={handleGoogleSignIn}
-          disabled={loading}
-          className="btn btn-secondary w-full py-3 mt-6 flex items-center justify-center gap-3"
-        >
-          <FaGoogle className="text-rose-500" />
-          Continue with Google
-        </button>
-
-        <div className="mt-8 text-center text-sm">
-          <p className="text-text-muted">
-            Already have an account?{" "}
-            <Link href="/login" className="text-accent font-semibold hover:underline">
+          <div className="mt-10 text-center text-sm">
+            <span className="text-text-muted">Already have an account? </span>
+            <Link href="/login" className="text-emerald font-bold hover:underline">
               Sign in
-            </Link>
-          </p>
-          <div className="mt-6 pt-6 border-t border-border">
-            <Link href="/" className="text-text-muted hover:text-primary transition-colors">
-              ← Back to homepage
             </Link>
           </div>
         </div>

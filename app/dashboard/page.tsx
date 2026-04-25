@@ -7,8 +7,8 @@ import { doc, getDoc, collection, query, where, getDocs, limit, orderBy } from "
 import { Batch, Submission } from "@/lib/types";
 import { FaFileUpload, FaCheckCircle, FaExclamationTriangle, FaGithub, FaLink, FaFilePdf, FaYoutube, FaUser, FaEdit, FaSave, FaTimes } from "react-icons/fa";
 import Link from "next/link";
-import CommentPanel from "@/components/CommentPanel";
 import { updateDoc } from "firebase/firestore";
+import SubmissionSidebar from "@/components/SubmissionSidebar";
 
 export default function StudentDashboard() {
   const { studentData, setStudentData } = useAuth();
@@ -16,6 +16,7 @@ export default function StudentDashboard() {
   const [batch, setBatch] = useState<Batch | null>(null);
   const [batches, setBatches] = useState<Batch[]>([]);
   const [loading, setLoading] = useState(true);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
   
   // Profile Edit State
   const [isEditingProfile, setIsEditingProfile] = useState(false);
@@ -148,18 +149,26 @@ export default function StudentDashboard() {
           
           {submission ? (
             <div className="space-y-4">
-              <div className="p-4 bg-emerald-500/10 border border-emerald-500/20 rounded-xl">
-                <p className="text-sm text-emerald-400 font-medium">Your project has been successfully uploaded.</p>
-                <p className="text-xs text-text-muted mt-1">Last updated: {new Date(submission.updatedAt).toLocaleString()}</p>
+              <div className="p-4 bg-emerald-500/10 border border-emerald-500/20 rounded-xl flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+                <div>
+                  <p className="text-sm text-emerald-600 font-medium font-bold">Your project has been successfully uploaded.</p>
+                  <p className="text-xs text-text-muted mt-1">Last updated: {new Date(submission.updatedAt).toLocaleString()}</p>
+                </div>
+                <button 
+                  onClick={() => setSidebarOpen(true)}
+                  className="btn btn-primary btn-sm shrink-0 shadow-lg shadow-accent/20"
+                >
+                  View Discussion & Feedback
+                </button>
               </div>
               <Link href="/dashboard/submit" className="btn btn-secondary w-full">
-                View or Edit Submission
+                Edit Submission
               </Link>
             </div>
           ) : (
             <div className="space-y-4">
               <div className="p-4 bg-amber-500/10 border border-amber-500/20 rounded-xl">
-                <p className="text-sm text-amber-400 font-medium">You haven't submitted your project yet.</p>
+                <p className="text-sm text-amber-500 font-medium font-bold">You haven't submitted your project yet.</p>
                 <p className="text-xs text-text-muted mt-1">Ensure all required files are ready before submission.</p>
               </div>
               {!batch?.isLocked && (
@@ -260,45 +269,13 @@ export default function StudentDashboard() {
       </div>
 
       {submission && (
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          <div className="lg:col-span-2 glass-card p-6">
-            <h2 className="text-xl font-bold mb-6">Submission Overview</h2>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-               <div className="space-y-4">
-                  <div className="flex items-center gap-3 text-sm">
-                    <FaGithub className="text-text-muted" />
-                    <a href={submission.githubUrl} target="_blank" className="text-accent hover:underline truncate">{submission.githubUrl}</a>
-                  </div>
-                  {submission.websiteUrl && (
-                    <div className="flex items-center gap-3 text-sm">
-                      <FaLink className="text-text-muted" />
-                      <a href={submission.websiteUrl} target="_blank" className="text-emerald-400 hover:underline truncate">{submission.websiteUrl}</a>
-                    </div>
-                  )}
-                  {submission.youtubeUrl && (
-                    <div className="flex items-center gap-3 text-sm">
-                      <FaYoutube className="text-rose-500" />
-                      <span className="text-secondary truncate">Video Linked</span>
-                    </div>
-                  )}
-                  <div className="flex items-center gap-3 text-sm">
-                    <FaFilePdf className="text-rose-400" />
-                    <span className="text-secondary">Research Paper Uploaded</span>
-                  </div>
-               </div>
-               <div className="flex flex-wrap gap-2">
-                  {submission.screenshotUrls.map((url, i) => (
-                    <div key={i} className="w-16 h-16 rounded-lg bg-bg-primary border border-border overflow-hidden">
-                      <img src={url} alt="Screenshot" className="w-full h-full object-cover" />
-                    </div>
-                  ))}
-               </div>
-            </div>
-          </div>
-          <div className="lg:col-span-1">
-            <CommentPanel submissionId={submission.id} />
-          </div>
-        </div>
+        <SubmissionSidebar 
+          isOpen={sidebarOpen} 
+          onClose={() => setSidebarOpen(false)} 
+          submission={submission} 
+          student={studentData!} 
+          batch={batch!} 
+        />
       )}
     </div>
   );
