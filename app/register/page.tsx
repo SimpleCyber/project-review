@@ -7,7 +7,7 @@ import { useAuth } from "@/lib/AuthContext";
 import { FaGraduationCap, FaUser, FaEnvelope, FaLock, FaLayerGroup, FaUsers } from "react-icons/fa";
 import { FcGoogle } from "react-icons/fc";
 import { db } from "@/lib/firebase";
-import { collection, query, getDocs, orderBy } from "firebase/firestore";
+import { collection, query, getDocs, orderBy, where, limit } from "firebase/firestore";
 import { Batch } from "@/lib/types";
 
 export default function RegisterPage() {
@@ -79,6 +79,18 @@ export default function RegisterPage() {
     setLoading(true);
 
     try {
+      // Check if group is already registered in this batch
+      const checkQuery = query(
+        collection(db, "students"), 
+        where("batchId", "==", batchId), 
+        where("groupId", "==", groupId), 
+        limit(1)
+      );
+      const checkSnap = await getDocs(checkQuery);
+      if (!checkSnap.empty) {
+        throw new Error(`Group ${groupId} is already registered for this batch.`);
+      }
+
       await register(regId, email, password, name, groupId, batchId);
       router.push("/dashboard");
     } catch (err: any) {

@@ -37,7 +37,12 @@ export default function SubmissionPage() {
     async function fetchData() {
       if (!studentData) return;
       try {
-        const q = query(collection(db, "submissions"), where("studentId", "==", studentData.id), limit(1));
+        const q = query(
+          collection(db, "submissions"), 
+          where("batchId", "==", studentData.batchId),
+          where("groupId", "==", studentData.groupId),
+          limit(1)
+        );
         const subSnap = await getDocs(q);
         if (!subSnap.empty) {
           const data = { id: subSnap.docs[0].id, ...subSnap.docs[0].data() } as Submission;
@@ -160,7 +165,9 @@ export default function SubmissionPage() {
       if (submission) {
         await updateDoc(doc(db, "submissions", submission.id), submissionData);
       } else {
-        await addDoc(collection(db, "submissions"), {
+        const newId = `${studentData!.batchId}_${studentData!.groupId}`;
+        await setDoc(doc(db, "submissions", newId), {
+          id: newId,
           ...submissionData,
           submittedAt: Date.now(),
         });

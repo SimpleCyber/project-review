@@ -32,7 +32,12 @@ export default function ProfilePage() {
     async function fetchData() {
       if (!studentData) return;
       try {
-        const q = query(collection(db, "submissions"), where("studentId", "==", studentData.id), limit(1));
+        const q = query(
+          collection(db, "submissions"), 
+          where("batchId", "==", studentData.batchId),
+          where("groupId", "==", studentData.groupId),
+          limit(1)
+        );
         const subSnap = await getDocs(q);
         
         let subData: Submission | null = null;
@@ -42,7 +47,7 @@ export default function ProfilePage() {
           setMembers(subData.members || []);
         } else {
           // Initialize empty submission for profile
-          const newId = `${studentData.batchId}_${studentData.groupId}_${studentData.id}`;
+          const newId = `${studentData.batchId}_${studentData.groupId}`;
           const newDoc = {
             studentId: studentData.id,
             batchId: studentData.batchId,
