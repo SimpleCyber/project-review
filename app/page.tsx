@@ -10,7 +10,7 @@ export default function LandingPage() {
       <nav className="flex items-center justify-between px-6 py-6 max-w-7xl mx-auto w-full">
         <div className="flex items-center gap-2">
           <div className="w-10 h-10 gradient-accent rounded-xl flex items-center justify-center text-white shadow-lg">
-            <FaGraduationCap size={24} />
+<FaGraduationCap className="text-green-700" size={24} />
           </div>
           <span className="text-xl font-bold tracking-tight">ProjectReview</span>
         </div>
