@@ -73,7 +73,7 @@ export default function SubmissionsOverview() {
           <input 
             type="text" 
             placeholder="Search by Reg ID or Group..." 
-            className="input pl-11"
+            className="input !pl-11"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
           />

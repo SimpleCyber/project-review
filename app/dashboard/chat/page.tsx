@@ -31,27 +31,21 @@ export default function ChatPage() {
     fetchData();
   }, [studentData]);
 
-  if (loading) return <div className="h-96 w-full skeleton" />;
+  if (loading) return <div className="h-screen w-full skeleton" />;
 
   if (!submission) {
     return (
-      <div className="text-center py-20 text-text-muted glass-card border border-border">
+      <div className="text-center py-20 text-text-muted bg-white border border-border shadow-sm rounded-xl h-[calc(100vh-80px)] flex flex-col items-center justify-center">
         <FaComments size={48} className="mx-auto mb-4 opacity-20" />
-        <p className="font-semibold">You haven't submitted a project yet.</p>
-        <p className="text-sm">Submit your project first to join the discussion.</p>
+        <p className="font-semibold text-lg">You haven't submitted a project yet.</p>
+        <p className="text-sm">Submit your project first to join the full discussion.</p>
       </div>
     );
   }
 
   return (
-    <div className="space-y-6 animate-fade-in max-w-4xl mx-auto">
-      <div>
-        <h1 className="text-3xl font-bold mb-2">Discussion & Feedback</h1>
-        <p className="text-secondary">Chat directly with your administration regarding your submission.</p>
-      </div>
-      <div className="glass-card shadow-sm border border-border rounded-xl">
-          <CommentPanel submissionId={submission.id} />
-      </div>
+    <div className="animate-fade-in -mx-6 -my-6 lg:-mx-10 lg:-my-10 h-screen flex flex-col bg-white">
+      <CommentPanel submissionId={submission.id} isFullScreen={true} />
     </div>
   );
 }

@@ -248,41 +248,49 @@ export default function BatchesPage() {
               ) : (
                 <>
                   <div>
-                    <div className="flex justify-between items-start mb-4">
-                      <div className="w-10 h-10 rounded-lg bg-accent-light flex items-center justify-center text-accent">
+                    <div className="flex justify-between items-start mb-5">
+                      <div className="w-12 h-12 rounded-2xl bg-emerald-50 border border-emerald-100 flex items-center justify-center text-emerald-600 shadow-sm">
                         <FaCalendarAlt size={20} />
                       </div>
-                      <div className="flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                      <div className="flex items-center gap-2">
+                        <div className={`px-3 py-1.5 rounded-full text-[11px] uppercase tracking-wider font-extrabold flex items-center gap-1.5 shadow-sm border ${batch.isLocked ? "bg-rose-50 text-rose-600 border-rose-100" : "bg-emerald-50 text-emerald-600 border-emerald-100"}`}>
+                          {batch.isLocked ? <><FaLock size={10} /> Locked</> : <><FaCheckCircle size={10} /> Active</>}
+                        </div>
                         <button 
                           onClick={() => startEditing(batch)}
-                          className="w-8 h-8 rounded-lg bg-bg-primary border border-border flex items-center justify-center text-text-muted hover:text-accent transition-all"
+                          className="w-8 h-8 rounded-full bg-white border border-gray-200 shadow-sm flex items-center justify-center text-gray-500 hover:text-emerald-600 hover:border-emerald-200 transition-all cursor-pointer"
                           title="Edit Batch"
                         >
-                          <FaEdit size={14} />
+                          <FaEdit size={12} />
                         </button>
-                        <div className={`badge ${batch.isLocked ? "badge-danger" : "badge-success"}`}>
-                          {batch.isLocked ? <><FaLock size={10} /> Locked</> : <><FaCheckCircle size={10} /> Open</>}
-                        </div>
                       </div>
                     </div>
-                    <h3 className="text-xl font-bold mb-1">{batch.name}</h3>
-                    <p className="text-sm text-text-muted">Created {new Date(batch.createdAt).toLocaleDateString()}</p>
-                    <div className="mt-4 p-2 rounded-lg bg-bg-primary/50 border border-border/50">
-                       <p className="text-[10px] text-text-muted uppercase font-bold tracking-wider mb-1">Configuration</p>
-                       <p className="text-sm font-semibold text-accent">{batch.maxGroups || 6} Groups Total</p>
+
+                    <h3 className="text-xl font-extrabold text-gray-900 mb-1 tracking-tight">{batch.name}</h3>
+                    <p className="text-sm font-medium text-gray-500">Created {new Date(batch.createdAt).toLocaleDateString()}</p>
+                    
+                    <div className="mt-5 p-3 rounded-xl bg-gray-50/80 border border-gray-100 flex items-center justify-between">
+                       <div>
+                         <p className="text-[10px] text-gray-400 uppercase font-black tracking-widest mb-0.5">Configuration</p>
+                         <p className="text-sm font-bold text-gray-800">{batch.maxGroups || 6} Groups Total</p>
+                       </div>
+                       <div className="px-3 py-1 rounded-lg bg-white shadow-sm font-bold text-gray-400 border border-gray-100 text-[10px]">
+                         G1 - G{batch.maxGroups || 6}
+                       </div>
                     </div>
                   </div>
 
-                  <div className="mt-8 flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                  <div className="mt-6 flex gap-2 pt-4 border-t border-gray-100">
                     <button 
                       onClick={() => toggleLock(batch.id, batch.isLocked)}
-                      className={`btn flex-1 btn-sm ${batch.isLocked ? "btn-secondary" : "btn-danger"}`}
+                      className={`flex-1 py-2.5 rounded-xl text-sm font-bold flex items-center justify-center gap-2 transition-all ${batch.isLocked ? "bg-white border border-gray-200 text-gray-600 hover:bg-gray-50 shadow-sm hover:text-emerald-600 hover:border-emerald-200" : "bg-rose-50 text-rose-600 border border-rose-100 hover:bg-rose-500 hover:text-white shadow-sm"}`}
                     >
-                      {batch.isLocked ? <><FaUnlock size={14} /> Unlock</> : <><FaLock size={14} /> Lock</>}
+                      {batch.isLocked ? <><FaUnlock size={14} /> Unlock Batch</> : <><FaLock size={14} /> Lock Batch</>}
                     </button>
                     <button 
                       onClick={() => deleteBatch(batch.id)}
-                      className="btn btn-secondary btn-sm text-rose-500 hover:text-rose-400"
+                      className="w-10 rounded-xl bg-white border border-gray-200 shadow-sm flex items-center justify-center text-rose-500 hover:bg-rose-50 hover:border-rose-200 transition-all"
+                      title="Delete Batch"
                     >
                       <FaTrash size={14} />
                     </button>

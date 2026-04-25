@@ -181,16 +181,15 @@ export default function SubmissionPage() {
           
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div>
-              <label className="label" htmlFor="github">GitHub URL <span className="text-rose-500">*</span></label>
-              <div className="relative">
-                <span className="absolute left-4 top-1/2 -translate-y-1/2 text-text-muted">
-                  <FaGithub size={14} />
-                </span>
+              <label className="label flex items-center gap-2" htmlFor="github">
+                <FaGithub className="text-emerald" size={14} /> GitHub URL <span className="text-rose-500">*</span>
+              </label>
+              <div className="relative mt-1">
                 <input
                   id="github"
                   type="url"
                   placeholder="https://github.com/user/repo"
-                  className="input pl-11"
+                  className="input"
                   value={githubUrl}
                   onChange={(e) => setGithubUrl(e.target.value)}
                   disabled={isLocked}
@@ -200,16 +199,15 @@ export default function SubmissionPage() {
             </div>
 
             <div>
-              <label className="label" htmlFor="website">Website URL (Optional)</label>
-              <div className="relative">
-                <span className="absolute left-4 top-1/2 -translate-y-1/2 text-text-muted">
-                  <FaLink size={14} />
-                </span>
+              <label className="label flex items-center gap-2" htmlFor="website">
+                <FaLink className="text-emerald" size={14} /> Website URL (Optional)
+              </label>
+              <div className="relative mt-1">
                 <input
                   id="website"
                   type="url"
                   placeholder="https://your-project.vercel.app"
-                  className="input pl-11"
+                  className="input"
                   value={websiteUrl}
                   onChange={(e) => setWebsiteUrl(e.target.value)}
                   disabled={isLocked}
@@ -218,16 +216,15 @@ export default function SubmissionPage() {
             </div>
 
             <div className="md:col-span-2">
-              <label className="label" htmlFor="youtube">YouTube Demo Link (Optional)</label>
-              <div className="relative">
-                <span className="absolute left-4 top-1/2 -translate-y-1/2 text-text-muted">
-                  <FaYoutube size={14} />
-                </span>
+              <label className="label flex items-center gap-2" htmlFor="youtube">
+                <FaYoutube className="text-emerald" size={14} /> YouTube Demo Link (Optional)
+              </label>
+              <div className="relative mt-1">
                 <input
                   id="youtube"
                   type="url"
                   placeholder="https://youtube.com/watch?v=..."
-                  className="input pl-11"
+                  className="input"
                   value={youtubeUrl}
                   onChange={(e) => setYoutubeUrl(e.target.value)}
                   disabled={isLocked}
