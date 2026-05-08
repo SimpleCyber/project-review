@@ -85,8 +85,8 @@ export default function AdminOverview() {
                       <FaFileUpload size={14} />
                     </div>
                     <div>
-                      <p className="text-sm font-semibold">{sub.registrationId}</p>
-                      <p className="text-[10px] text-text-muted uppercase tracking-wider">{sub.groupId} • {new Date(sub.submittedAt).toLocaleDateString()}</p>
+                      <p className="text-sm font-semibold">Group {sub.groupId}</p>
+                      <p className="text-xs text-text-muted">{batches.find(b => b.id === sub.batchId)?.name || "Unknown Batch"}</p>
                     </div>
                   </div>
                   <a href={`/admin/submissions/${sub.id}`} className="btn btn-secondary btn-sm px-3">View</a>

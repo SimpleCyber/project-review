@@ -9,6 +9,7 @@ import { FaFileUpload, FaCheckCircle, FaExclamationTriangle, FaGithub, FaLink, F
 import Link from "next/link";
 import { updateDoc } from "firebase/firestore";
 import SubmissionSidebar from "@/components/SubmissionSidebar";
+import CommentPanel from "@/components/CommentPanel";
 
 export default function StudentDashboard() {
   const { studentData, setStudentData } = useAuth();
@@ -144,22 +145,34 @@ export default function StudentDashboard() {
         <div className="stat-card">
           <h2 className="text-lg font-semibold mb-6 flex items-center gap-2">
             <FaCheckCircle className={submission ? "text-emerald-500" : "text-text-muted"} /> 
-            Status: {submission ? "Submitted" : "Pending"}
+            Submission Status
           </h2>
           
           {submission ? (
             <div className="space-y-4">
-              <div className="p-4 bg-emerald-500/10 border border-emerald-500/20 rounded-xl flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+              <div className="p-4 bg-emerald-500/10 border border-emerald-500/20 rounded-xl flex flex-col justify-between items-start gap-2">
                 <div>
                   <p className="text-sm text-emerald-600 font-medium font-bold">Your project has been successfully uploaded.</p>
                   <p className="text-xs text-text-muted mt-1">Last updated: {new Date(submission.updatedAt).toLocaleString()}</p>
                 </div>
-                <button 
-                  onClick={() => setSidebarOpen(true)}
-                  className="btn btn-primary btn-sm shrink-0 shadow-lg shadow-accent/20"
-                >
-                  View Discussion & Feedback
-                </button>
+                
+                {/* Admin Status Display */}
+                <div className="mt-2 flex items-center gap-2">
+                  <span className="text-xs font-bold text-gray-500 uppercase">Review Status:</span>
+                  <span className={`px-2 py-1 rounded-md text-xs font-bold ${
+                    submission.reviewStatus === 'review_done' ? 'bg-emerald-100 text-emerald-700' : 
+                    submission.reviewStatus === 'under_review' ? 'bg-blue-100 text-blue-700' : 'bg-amber-100 text-amber-700'
+                  }`}>
+                    {submission.reviewStatus === 'review_done' ? 'Review Done' : 
+                     submission.reviewStatus === 'under_review' ? 'Under Review' : 'Pending Review'}
+                  </span>
+                </div>
+                {submission.reviewComment && (
+                  <div className="mt-2 p-3 bg-white/50 rounded border border-emerald-500/10 text-sm text-gray-800">
+                    <strong className="block text-[10px] uppercase text-emerald-600 mb-1">Faculty Feedback:</strong>
+                    {submission.reviewComment}
+                  </div>
+                )}
               </div>
               <Link href="/dashboard/submit" className="btn btn-secondary w-full">
                 Edit Submission
@@ -255,8 +268,8 @@ export default function StudentDashboard() {
                 <span className="font-medium px-2 py-0.5 bg-accent-light text-accent rounded-md">{studentData?.groupId}</span>
               </div>
               <div className="flex justify-between items-center text-sm border-t border-border pt-2 mt-2">
-                <span className="text-text-muted">Registration ID</span>
-                <span className="font-medium opacity-50">{studentData?.registrationId}</span>
+                <span className="text-text-muted">Faculty Reviews</span>
+                <span className="font-medium text-accent">Active</span>
               </div>
               <div className="pt-4 mt-2 border-t border-border/50">
                 <Link href="/dashboard/profile" className="btn btn-secondary btn-sm w-full gap-2 transition-all hover:bg-accent hover:text-white">
@@ -267,6 +280,19 @@ export default function StudentDashboard() {
           )}
         </div>
       </div>
+
+      {/* Direct Chat / Discussion Panel */}
+      {submission && (
+        <div className="stat-card p-0 overflow-hidden flex flex-col h-[500px]">
+          <div className="p-4 bg-gray-50 border-b border-gray-100 flex items-center justify-between">
+            <h2 className="text-lg font-bold text-gray-900">Project Discussion</h2>
+            <p className="text-xs font-semibold text-gray-500">Communicate with faculty</p>
+          </div>
+          <div className="flex-1 overflow-hidden relative">
+            <CommentPanel submissionId={submission.id} isFullScreen />
+          </div>
+        </div>
+      )}
 
       {submission && (
         <SubmissionSidebar 

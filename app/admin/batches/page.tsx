@@ -9,17 +9,18 @@ import { Batch } from "@/lib/types";
 import { FaPlus, FaLock, FaUnlock, FaTrash, FaCalendarAlt, FaCheckCircle, FaExclamationCircle, FaEdit, FaTimes, FaSave } from "react-icons/fa";
 import ConfirmationModal from "@/components/ConfirmationModal";
 
+const AVAILABLE_YEARS = [2025, 2026, 2027, 2028, 2029, 2030];
+
 export default function BatchesPage() {
   const [batches, setBatches] = useState<Batch[]>([]);
   const [loading, setLoading] = useState(true);
-  const [name, setName] = useState("");
-  const [year, setYear] = useState<number | "">(new Date().getFullYear());
-  const [batchNum, setBatchNum] = useState<number | "">(1);
+  const [year, setYear] = useState<number>(new Date().getFullYear());
+  const [semesterNum, setSemesterNum] = useState<number>(1);
   const [groupCount, setGroupCount] = useState<number | "">(6);
   const [creating, setCreating] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
-  const [editYear, setEditYear] = useState<number | "">(new Date().getFullYear());
-  const [editBatchNum, setEditBatchNum] = useState<number | "">(1);
+  const [editYear, setEditYear] = useState<number>(new Date().getFullYear());
+  const [editSemesterNum, setEditSemesterNum] = useState<number>(1);
   const [editGroupCount, setEditGroupCount] = useState<number | "">(6);
   const [updating, setUpdating] = useState(false);
   const [error, setError] = useState("");
@@ -52,25 +53,24 @@ export default function BatchesPage() {
     setCreating(true);
 
     try {
-      const batchName = `${year} Batch ${batchNum}`;
+      const batchName = `${year}-${year + 1} Semester ${semesterNum}`;
       // Check if already exists
       if (batches.some(b => b.name === batchName)) {
-        throw new Error("Batch with this name already exists.");
+        throw new Error("A semester with this name already exists.");
       }
 
       await addDoc(collection(db, "batches"), {
         name: batchName,
         year,
-        batchNumber: batchNum,
+        batchNumber: semesterNum,
         maxGroups: groupCount,
         isLocked: false,
         createdAt: Date.now(),
       });
 
-      setName("");
       fetchBatches();
     } catch (err: any) {
-      setError(err.message || "Failed to create batch.");
+      setError(err.message || "Failed to create semester.");
     } finally {
       setCreating(false);
     }
@@ -79,7 +79,7 @@ export default function BatchesPage() {
   const startEditing = (batch: Batch) => {
     setEditingId(batch.id);
     setEditYear(batch.year);
-    setEditBatchNum(batch.batchNumber);
+    setEditSemesterNum(batch.batchNumber);
     setEditGroupCount(batch.maxGroups || 6);
   };
 
@@ -94,19 +94,19 @@ export default function BatchesPage() {
     setUpdating(true);
 
     try {
-      const batchName = `${editYear} Batch ${editBatchNum}`;
+      const batchName = `${editYear}-${editYear + 1} Semester ${editSemesterNum}`;
       
       await updateDoc(doc(db, "batches", editingId), {
         name: batchName,
         year: editYear,
-        batchNumber: editBatchNum,
+        batchNumber: editSemesterNum,
         maxGroups: editGroupCount,
       });
 
       setEditingId(null);
       fetchBatches();
     } catch (err: any) {
-      setError(err.message || "Failed to update batch.");
+      setError(err.message || "Failed to update semester.");
     } finally {
       setUpdating(false);
     }
@@ -137,15 +137,15 @@ export default function BatchesPage() {
       setBatchToDelete(null);
     } catch (err) {
       console.error("Error deleting batch:", err);
-      setError("Failed to delete batch.");
+      setError("Failed to delete semester.");
     }
   };
 
   return (
     <div className="space-y-8">
       <div>
-        <h1 className="text-3xl font-bold mb-2">Manage Batches</h1>
-        <p className="text-secondary">Create and control project submission windows for different batches.</p>
+        <h1 className="text-3xl font-bold mb-2">Manage Semesters</h1>
+        <p className="text-secondary">Create and control project submission windows for different semesters.</p>
       </div>
 
       {error && <div className="alert alert-error">{error}</div>}
@@ -153,30 +153,31 @@ export default function BatchesPage() {
       {/* Create Batch Form */}
       <div className="glass-card p-6">
         <h2 className="text-lg font-semibold mb-4 flex items-center gap-2">
-          <FaPlus className="text-accent" /> New Batch
+          <FaPlus className="text-accent" /> New Semester
         </h2>
         <form onSubmit={handleCreateBatch} className="flex flex-wrap gap-4 items-end">
           <div className="flex-1 min-w-[150px]">
             <label className="label">Year</label>
-            <input 
-              type="number" 
-              className="input" 
+            <select 
+              className="select" 
               value={year} 
-              onChange={(e) => setYear(e.target.value === '' ? '' : parseInt(e.target.value))} 
-              min={2020} max={2100}
-              required
-            />
+              onChange={(e) => setYear(parseInt(e.target.value))}
+            >
+              {AVAILABLE_YEARS.map(y => (
+                <option key={y} value={y}>{y}-{y + 1}</option>
+              ))}
+            </select>
           </div>
           <div className="flex-1 min-w-[150px]">
-            <label className="label">Batch Number (e.g. 1, 2)</label>
-            <input 
-              type="number" 
-              className="input" 
-              value={batchNum} 
-              onChange={(e) => setBatchNum(e.target.value === '' ? '' : parseInt(e.target.value))} 
-              min={1}
-              required
-            />
+            <label className="label">Semester</label>
+            <select 
+              className="select" 
+              value={semesterNum} 
+              onChange={(e) => setSemesterNum(parseInt(e.target.value))}
+            >
+              <option value={1}>Semester 1</option>
+              <option value={2}>Semester 2</option>
+            </select>
           </div>
           <div className="flex-1 min-w-[150px]">
             <label className="label">Total Groups (e.g. 10)</label>
@@ -190,7 +191,7 @@ export default function BatchesPage() {
             />
           </div>
           <button type="submit" className="btn btn-primary h-[46px]" disabled={creating}>
-            {creating ? <div className="spinner" /> : "Create Batch"}
+            {creating ? <div className="spinner" /> : "Create Semester"}
           </button>
         </form>
         <p className="text-[10px] text-text-muted mt-4 uppercase font-bold tracking-widest">
@@ -206,7 +207,7 @@ export default function BatchesPage() {
           ))
         ) : batches.length === 0 ? (
           <div className="md:col-span-3 glass-card p-12 text-center text-text-muted italic">
-            No batches created yet. Create one above to allow student registrations.
+            No semesters created yet. Create one above to allow student registrations.
           </div>
         ) : (
           batches.map((batch) => (
@@ -214,7 +215,7 @@ export default function BatchesPage() {
               {editingId === batch.id ? (
                 <form onSubmit={handleUpdateBatch} className="space-y-4 h-full flex flex-col">
                   <div className="flex justify-between items-center mb-2">
-                    <h3 className="font-bold text-accent">Editing Batch</h3>
+                    <h3 className="font-bold text-accent">Editing Semester</h3>
                     <button type="button" onClick={cancelEditing} className="text-text-muted hover:text-rose-500">
                       <FaTimes size={18} />
                     </button>
@@ -222,23 +223,26 @@ export default function BatchesPage() {
                   <div className="grid grid-cols-2 gap-3">
                     <div>
                       <label className="text-[10px] font-bold uppercase text-text-muted">Year</label>
-                      <input 
-                        type="number" 
+                      <select 
                         className="input input-sm h-10" 
                         value={editYear} 
-                        onChange={(e) => setEditYear(e.target.value === '' ? '' : parseInt(e.target.value))} 
-                        required
-                      />
+                        onChange={(e) => setEditYear(parseInt(e.target.value))}
+                      >
+                        {AVAILABLE_YEARS.map(y => (
+                          <option key={y} value={y}>{y}-{y + 1}</option>
+                        ))}
+                      </select>
                     </div>
                     <div>
-                      <label className="text-[10px] font-bold uppercase text-text-muted">Batch #</label>
-                      <input 
-                        type="number" 
+                      <label className="text-[10px] font-bold uppercase text-text-muted">Semester</label>
+                      <select 
                         className="input input-sm h-10" 
-                        value={editBatchNum} 
-                        onChange={(e) => setEditBatchNum(e.target.value === '' ? '' : parseInt(e.target.value))} 
-                        required
-                      />
+                        value={editSemesterNum} 
+                        onChange={(e) => setEditSemesterNum(parseInt(e.target.value))}
+                      >
+                        <option value={1}>Semester 1</option>
+                        <option value={2}>Semester 2</option>
+                      </select>
                     </div>
                   </div>
                   <div>
@@ -254,7 +258,7 @@ export default function BatchesPage() {
                   </div>
                   <div className="mt-auto pt-4">
                     <button type="submit" className="btn btn-primary btn-sm w-full gap-2 h-10" disabled={updating}>
-                      {updating ? <div className="spinner" /> : <><FaSave size={14} /> Update Batch</>}
+                      {updating ? <div className="spinner" /> : <><FaSave size={14} /> Update Semester</>}
                     </button>
                   </div>
                 </form>
@@ -272,7 +276,7 @@ export default function BatchesPage() {
                         <button 
                           onClick={() => startEditing(batch)}
                           className="w-8 h-8 rounded-full bg-white border border-gray-200 shadow-sm flex items-center justify-center text-gray-500 hover:text-emerald-600 hover:border-emerald-200 transition-all cursor-pointer"
-                          title="Edit Batch"
+                          title="Edit Semester"
                         >
                           <FaEdit size={12} />
                         </button>
@@ -288,7 +292,7 @@ export default function BatchesPage() {
                          <p className="text-sm font-bold text-gray-800">{batch.maxGroups || 6} Groups Total</p>
                        </div>
                        <div className="px-3 py-1 rounded-lg bg-white shadow-sm font-bold text-gray-400 border border-gray-100 text-[10px]">
-                         G1 - G{batch.maxGroups || 6}
+                         B1 - B{batch.maxGroups || 6}
                        </div>
                     </div>
                   </div>
@@ -298,12 +302,12 @@ export default function BatchesPage() {
                       onClick={() => toggleLock(batch.id, batch.isLocked)}
                       className={`flex-1 py-2.5 rounded-xl text-sm font-bold flex items-center justify-center gap-2 transition-all ${batch.isLocked ? "bg-white border border-gray-200 text-gray-600 hover:bg-gray-50 shadow-sm hover:text-emerald-600 hover:border-emerald-200" : "bg-rose-50 text-rose-600 border border-rose-100 hover:bg-rose-500 hover:text-white shadow-sm"}`}
                     >
-                      {batch.isLocked ? <><FaUnlock size={14} /> Unlock Batch</> : <><FaLock size={14} /> Lock Batch</>}
+                      {batch.isLocked ? <><FaUnlock size={14} /> Unlock</> : <><FaLock size={14} /> Lock</>}
                     </button>
                     <button 
                       onClick={() => deleteBatch(batch)}
                       className="w-10 rounded-xl bg-white border border-gray-200 shadow-sm flex items-center justify-center text-rose-500 hover:bg-rose-50 hover:border-rose-200 transition-all"
-                      title="Delete Batch"
+                      title="Delete Semester"
                     >
                       <FaTrash size={14} />
                     </button>
@@ -318,15 +322,15 @@ export default function BatchesPage() {
       <div className="locked-banner bg-accent-light/30 border-accent/20">
         <FaExclamationCircle className="text-accent" />
         <p className="text-sm text-text-secondary">
-          <strong>Pro Tip:</strong> Locking a batch prevents students in that batch from editing or submitting new projects. 
+          <strong>Pro Tip:</strong> Locking a semester prevents students from editing or submitting new projects. 
           Useful for hard deadlines.
         </p>
       </div>
 
       <ConfirmationModal
         isOpen={isDeleteModalOpen}
-        title="Delete Batch?"
-        message={`Are you sure you want to delete "${batchToDelete?.name}"? Students in this batch will no longer be able to submit or edit their projects.`}
+        title="Delete Semester?"
+        message={`Are you sure you want to delete "${batchToDelete?.name}"? Students in this semester will no longer be able to submit or edit their projects.`}
         onConfirm={confirmDeleteBatch}
         onCancel={() => {
           setIsDeleteModalOpen(false);

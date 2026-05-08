@@ -89,7 +89,7 @@ export default function StudentLayout({ children }: { children: React.ReactNode 
               </div>
               <div className="min-w-0">
                 <h2 className="font-bold text-sm leading-tight text-white truncate">{studentData.name}</h2>
-                <p className="text-xs text-white/50 truncate font-medium">{studentData.registrationId}</p>
+                <p className="text-xs text-white/50 truncate font-medium">Group {studentData.groupId}</p>
               </div>
             </div>
           </div>

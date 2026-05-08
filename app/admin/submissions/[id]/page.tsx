@@ -2,13 +2,20 @@
 
 import { useState, useEffect } from "react";
 import { db } from "@/lib/firebase";
-import { doc, getDoc } from "firebase/firestore";
-import { Submission, Batch, Student } from "@/lib/types";
+import { doc, getDoc, updateDoc } from "firebase/firestore";
+import { Submission, Batch, Student, ReviewStatus } from "@/lib/types";
 import { useParams, useRouter } from "next/navigation";
 import { 
   FaArrowLeft, FaGithub, FaLink, FaFilePdf, FaYoutube, 
-  FaCalendarAlt, FaUserGraduate, FaLayerGroup, FaImage, FaUserFriends, FaEnvelope, FaIdCard 
+  FaImage, FaUserFriends, FaEnvelope, FaIdCard, FaCheckCircle, FaClock, FaSearch, FaFilePowerpoint, FaFileAlt, FaFileContract, FaTag, FaCommentDots 
 } from "react-icons/fa";
+import CommentPanel from "@/components/CommentPanel";
+
+const STATUS_CONFIG: Record<ReviewStatus, { label: string; icon: React.ReactNode; color: string; bg: string; border: string }> = {
+  pending_review: { label: "Pending", icon: <FaClock size={12} />, color: "text-amber-600", bg: "bg-amber-50", border: "border-amber-200" },
+  under_review: { label: "Reviewing", icon: <FaSearch size={12} />, color: "text-blue-600", bg: "bg-blue-50", border: "border-blue-200" },
+  review_done: { label: "Done", icon: <FaCheckCircle size={12} />, color: "text-emerald-600", bg: "bg-emerald-50", border: "border-emerald-200" },
+};
 
 export default function SubmissionDetail() {
   const { id } = useParams();
@@ -18,6 +25,11 @@ export default function SubmissionDetail() {
   const [batch, setBatch] = useState<Batch | null>(null);
   const [loading, setLoading] = useState(true);
 
+  // Status updating state
+  const [updatingStatus, setUpdatingStatus] = useState(false);
+  const [reviewComment, setReviewComment] = useState("");
+  const [showCommentInput, setShowCommentInput] = useState(false);
+
   useEffect(() => {
     async function fetchData() {
       if (!id) return;
@@ -26,6 +38,7 @@ export default function SubmissionDetail() {
         if (subDoc.exists()) {
           const subData = { id: subDoc.id, ...subDoc.data() } as Submission;
           setSubmission(subData);
+          setReviewComment(subData.reviewComment || "");
 
           const [studDoc, batchDoc] = await Promise.all([
             getDoc(doc(db, "students", subData.studentId)),
@@ -44,8 +57,61 @@ export default function SubmissionDetail() {
     fetchData();
   }, [id]);
 
+  const handleStatusChange = async (newStatus: ReviewStatus) => {
+    if (!submission) return;
+    setUpdatingStatus(true);
+    try {
+      if (newStatus === "review_done") {
+        setShowCommentInput(true);
+        setUpdatingStatus(false);
+        return;
+      }
+      await updateDoc(doc(db, "submissions", submission.id), { reviewStatus: newStatus });
+      setSubmission({ ...submission, reviewStatus: newStatus });
+    } catch (err) { 
+      console.error(err); 
+    } finally { 
+      setUpdatingStatus(false); 
+    }
+  };
+
+  const handleSaveReviewComment = async () => {
+    if (!submission) return;
+    setUpdatingStatus(true);
+    try {
+      await updateDoc(doc(db, "submissions", submission.id), { 
+        reviewStatus: "review_done" as ReviewStatus, 
+        reviewComment 
+      });
+      setSubmission({ ...submission, reviewStatus: "review_done", reviewComment });
+      setShowCommentInput(false);
+    } catch (err) { 
+      console.error(err); 
+    } finally { 
+      setUpdatingStatus(false); 
+    }
+  };
+
   if (loading) return <div className="space-y-6"><div className="h-20 w-40 skeleton" /><div className="h-96 skeleton" /></div>;
   if (!submission) return <div className="text-center py-20">Submission not found.</div>;
+
+  const currentStatus = submission.reviewStatus || "pending_review";
+  const statusInfo = STATUS_CONFIG[currentStatus];
+
+  const renderDocLink = (label: string, url: string | undefined, icon: React.ReactNode, color: string, key?: React.Key) => {
+    if (!url) return null;
+    return (
+      <a key={key} href={url} target="_blank" rel="noreferrer" className={`flex items-center gap-4 p-4 rounded-2xl bg-bg-primary border border-border shadow-sm hover:border-${color}-300 hover:shadow-md group transition-all`}>
+        <div className={`w-12 h-12 rounded-xl bg-${color}-50 flex items-center justify-center text-${color}-500 shrink-0`}>
+          {icon}
+        </div>
+        <div className="min-w-0">
+          <p className="text-[10px] text-gray-500 font-bold uppercase tracking-wider mb-0.5">{label}</p>
+          <p className="font-extrabold text-sm text-gray-800 truncate">View Document</p>
+        </div>
+      </a>
+    );
+  };
 
   return (
     <div className="space-y-8 animate-fade-in pb-20">
@@ -60,168 +126,172 @@ export default function SubmissionDetail() {
         <div>
           <h1 className="text-4xl font-bold mb-2">{student?.name || "Student Submission"}</h1>
           <p className="text-secondary flex items-center gap-2">
-            <span className="badge badge-info">{submission.registrationId}</span>
+            <span className="badge badge-info text-sm">Group {submission.groupId}</span>
             <span className="text-text-muted">•</span>
             <span>{batch?.name}</span>
-            <span className="text-text-muted">•</span>
-            <span>Group {submission.groupId}</span>
           </p>
         </div>
-        <div className="text-right">
+        <div className="text-right flex flex-col md:items-end">
           <p className="text-xs text-text-muted uppercase font-bold tracking-widest mb-1">Submitted On</p>
           <p className="font-semibold">{new Date(submission.submittedAt).toLocaleDateString()}</p>
         </div>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        
         {/* Left Column: Media & Links */}
         <div className="lg:col-span-2 space-y-8">
+          
           {/* Main Links */}
-          <div className="glass-card p-8 grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <a 
-              href={submission.githubUrl} 
-              target="_blank" 
-              className="flex items-center gap-4 p-4 rounded-xl bg-bg-primary border border-border hover:border-accent group transition-all"
-            >
-              <div className="w-12 h-12 rounded-lg bg-indigo-500/10 flex items-center justify-center text-indigo-400 group-hover:bg-accent group-hover:text-white transition-all">
-                <FaGithub size={24} />
-              </div>
-              <div>
-                <p className="text-xs text-text-muted font-bold uppercase">Repository</p>
-                <p className="font-semibold text-sm truncate">View on GitHub</p>
-              </div>
+          <div className="glass-card p-6 grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <a href={submission.githubUrl} target="_blank" className="flex items-center gap-4 p-4 rounded-xl bg-bg-primary border hover:border-accent transition-all">
+              <div className="w-12 h-12 rounded-lg bg-indigo-500/10 flex items-center justify-center text-indigo-400"><FaGithub size={24} /></div>
+              <div><p className="text-xs text-text-muted font-bold uppercase">Repository</p><p className="font-semibold text-sm">View GitHub</p></div>
             </a>
-
             {submission.websiteUrl && (
-              <a 
-                href={submission.websiteUrl} 
-                target="_blank" 
-                className="flex items-center gap-4 p-4 rounded-xl bg-bg-primary border border-border hover:border-emerald-500 group transition-all"
-              >
-                <div className="w-12 h-12 rounded-lg bg-emerald-500/10 flex items-center justify-center text-emerald-400 group-hover:bg-emerald-500 group-hover:text-white transition-all">
-                  <FaLink size={24} />
-                </div>
-                <div>
-                  <p className="text-xs text-text-muted font-bold uppercase">Live Demo</p>
-                  <p className="font-semibold text-sm truncate">Visit Website</p>
-                </div>
+              <a href={submission.websiteUrl} target="_blank" className="flex items-center gap-4 p-4 rounded-xl bg-bg-primary border hover:border-emerald-500 transition-all">
+                <div className="w-12 h-12 rounded-lg bg-emerald-500/10 flex items-center justify-center text-emerald-400"><FaLink size={24} /></div>
+                <div><p className="text-xs text-text-muted font-bold uppercase">Live Demo</p><p className="font-semibold text-sm">Visit Website</p></div>
               </a>
             )}
-
             {submission.youtubeUrl && (
-              <a 
-                href={submission.youtubeUrl} 
-                target="_blank" 
-                className="flex items-center gap-4 p-4 rounded-xl bg-bg-primary border border-border hover:border-rose-500 group transition-all col-span-1 sm:col-span-2"
-              >
-                <div className="w-12 h-12 rounded-lg bg-rose-500/10 flex items-center justify-center text-rose-500 group-hover:bg-rose-500 group-hover:text-white transition-all">
-                  <FaYoutube size={24} />
-                </div>
-                <div>
-                  <p className="text-xs text-text-muted font-bold uppercase">Video Link</p>
-                  <p className="font-semibold text-sm">{submission.youtubeUrl}</p>
-                </div>
+              <a href={submission.youtubeUrl} target="_blank" className="col-span-1 sm:col-span-2 flex items-center gap-4 p-4 rounded-xl bg-bg-primary border hover:border-rose-500 transition-all">
+                <div className="w-12 h-12 rounded-lg bg-rose-500/10 flex items-center justify-center text-rose-500"><FaYoutube size={24} /></div>
+                <div className="min-w-0"><p className="text-xs text-text-muted font-bold uppercase">Video Link</p><p className="font-semibold text-sm truncate">{submission.youtubeUrl}</p></div>
               </a>
+            )}
+          </div>
+
+          {/* Structured Documents List */}
+          <div className="glass-card p-6">
+            <h3 className="text-xl font-bold mb-6 flex items-center gap-3">
+              <FaFileAlt className="text-accent" /> Submitted Documents
+            </h3>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              {renderDocLink("Research Paper", submission.researchPaperUrl, <FaFilePdf size={22} />, "rose")}
+              {renderDocLink("PPT / Presentation", submission.pptUrl, <FaFilePowerpoint size={22} />, "orange")}
+              {renderDocLink("Synopsis", submission.synopsisUrl, <FaFileAlt size={22} />, "blue")}
+              {renderDocLink("Sponsorship Letter", submission.sponsorshipLetterUrl, <FaFileContract size={22} />, "purple")}
+              {submission.customDocuments?.map((cd, i) => renderDocLink(cd.label, cd.url, <FaTag size={22} />, "teal", i))}
+            </div>
+
+            {!submission.researchPaperUrl && !submission.pptUrl && !submission.synopsisUrl && !submission.sponsorshipLetterUrl && (!submission.customDocuments || submission.customDocuments.length === 0) && (
+              <p className="text-sm font-semibold text-gray-400 italic bg-gray-50 border-2 border-dashed border-gray-200 rounded-xl p-8 text-center">No documents uploaded.</p>
             )}
           </div>
 
           {/* Screenshots Gallery */}
-          <div className="glass-card p-8">
-            <h3 className="text-xl font-bold mb-6 flex items-center gap-3">
-              <FaImage className="text-accent" /> Project Screenshots
-            </h3>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              {submission.screenshotUrls.map((url, i) => (
-                <div key={i} className="rounded-xl overflow-hidden border border-border shadow-lg">
-                  <img src={url} alt={`Screenshot ${i+1}`} className="w-full h-auto hover:scale-105 transition-transform cursor-pointer" />
-                </div>
-              ))}
+          {submission.screenshotUrls && submission.screenshotUrls.length > 0 && (
+            <div className="glass-card p-6">
+              <h3 className="text-xl font-bold mb-6 flex items-center gap-3">
+                <FaImage className="text-blue-500" /> Screenshots
+              </h3>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                {submission.screenshotUrls.map((url, i) => (
+                  <div key={i} className="rounded-xl overflow-hidden border border-border shadow-md">
+                    <img src={url} alt={`Screenshot ${i+1}`} className="w-full h-auto hover:scale-105 transition-transform" />
+                  </div>
+                ))}
+              </div>
             </div>
-          </div>
+          )}
 
           {/* Group Members Section */}
-          <div className="glass-card p-8">
-            <h3 className="text-xl font-bold mb-6 flex items-center gap-3">
-              <FaUserFriends className="text-accent" /> Project Group Members
-            </h3>
-            {submission.members && submission.members.length > 0 ? (
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+          {submission.members && submission.members.length > 0 && (
+            <div className="glass-card p-6">
+              <h3 className="text-xl font-bold mb-6 flex items-center gap-3">
+                <FaUserFriends className="text-emerald-500" /> Group Members
+              </h3>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 {submission.members.map((member, i) => (
                   <div key={i} className="p-4 rounded-2xl bg-bg-primary border border-border flex items-start gap-4 hover:border-accent/30 transition-all">
-                    <div className="w-16 h-16 rounded-xl bg-accent-light overflow-hidden flex-shrink-0 border border-border">
+                    <div className="w-14 h-14 rounded-xl bg-gray-200 overflow-hidden shrink-0 border border-border">
                       {member.profilePictureUrl ? (
                          <img src={member.profilePictureUrl} alt={member.fullName} className="w-full h-full object-cover" />
                       ) : (
-                         <div className="w-full h-full flex items-center justify-center text-accent/20">
-                            <FaUserGraduate size={32} />
+                         <div className="w-full h-full flex items-center justify-center text-gray-400">
+                            <FaIdCard size={24} />
                          </div>
                       )}
                     </div>
                     <div className="space-y-1 min-w-0">
                       <p className="font-bold text-text-primary truncate">{member.fullName}</p>
-                      <p className="text-xs text-text-muted flex items-center gap-2">
-                        <FaIdCard size={10} /> {member.registrationNumber}
-                      </p>
-                      <p className="text-xs text-text-muted flex items-center gap-2 truncate">
-                        <FaEnvelope size={10} /> {member.collegeEmail}
-                      </p>
+                      <p className="text-xs text-text-muted flex items-center gap-2"><FaIdCard size={10} /> {member.registrationNumber}</p>
+                      <p className="text-xs text-text-muted flex items-center gap-2 truncate"><FaEnvelope size={10} /> {member.collegeEmail}</p>
                     </div>
                   </div>
                 ))}
               </div>
-            ) : (
-              <div className="p-12 text-center border-2 border-dashed border-border rounded-2xl text-text-muted italic">
-                No member details provided yet.
-              </div>
-            )}
-          </div>
+            </div>
+          )}
         </div>
 
-        {/* Right Column: PDF Preview & Sidebar Info */}
+        {/* Right Column: Review Status & Chat */}
         <div className="space-y-8">
+          
+          {/* Status Control Panel */}
           <div className="glass-card p-6">
-            <h3 className="text-lg font-bold mb-4 flex items-center gap-3">
-              <FaFilePdf className="text-rose-400" /> Research Paper
-            </h3>
-            {submission.researchPaperUrl ? (
-              <div className="space-y-4">
-                <div className="aspect-[3/4] bg-bg-primary rounded-xl overflow-hidden border border-border relative group">
-                  <iframe 
-                    src={`${submission.researchPaperUrl}#view=FitH`}
-                    className="w-full h-full border-none"
-                    title="Research Paper PDF"
+            <h3 className="text-lg font-bold mb-4 flex items-center gap-2"><FaCheckCircle className="text-emerald-500" /> Review Status</h3>
+            <div className={`inline-flex items-center gap-2 px-4 py-2 rounded-full text-sm font-bold ${statusInfo.bg} ${statusInfo.color} border mb-6`}>
+              {statusInfo.icon} {statusInfo.label}
+            </div>
+
+            {submission.reviewComment && (
+              <div className="mb-6 p-4 bg-emerald-50 border border-emerald-200 rounded-xl">
+                <p className="text-[10px] text-emerald-600 font-bold uppercase mb-2">Faculty Comment</p>
+                <p className="text-sm text-gray-800">{submission.reviewComment}</p>
+              </div>
+            )}
+
+            <div className="space-y-4">
+              <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest">Update Status</p>
+              <div className="flex flex-col gap-2">
+                {(Object.keys(STATUS_CONFIG) as ReviewStatus[]).map((status) => {
+                  const config = STATUS_CONFIG[status];
+                  return (
+                    <button 
+                      key={status} 
+                      onClick={() => handleStatusChange(status)} 
+                      disabled={updatingStatus || currentStatus === status} 
+                      className={`flex items-center justify-center gap-2 px-4 py-3 rounded-xl text-sm font-bold border w-full transition-all ${
+                        currentStatus === status ? `${config.bg} ${config.color} shadow-sm border-${config.color}` : "bg-bg-primary text-gray-600 hover:bg-gray-100"
+                      }`}
+                    >
+                      {config.icon} Mark as {config.label}
+                    </button>
+                  );
+                })}
+              </div>
+
+              {showCommentInput && (
+                <div className="mt-4 p-4 bg-bg-primary rounded-xl border animate-fade-in">
+                  <textarea 
+                    className="input text-sm mb-3" 
+                    rows={4} 
+                    placeholder="Enter official review feedback..." 
+                    value={reviewComment} 
+                    onChange={(e) => setReviewComment(e.target.value)} 
                   />
-                  <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
-                    <p className="text-white font-semibold">PDF Review Enabled</p>
+                  <div className="flex gap-2">
+                    <button onClick={handleSaveReviewComment} disabled={updatingStatus} className="btn btn-primary w-full btn-sm"><FaCheckCircle /> Save Feedback</button>
+                    <button onClick={() => setShowCommentInput(false)} className="btn btn-secondary btn-sm px-4"><FaTimes size={12} /></button>
                   </div>
                 </div>
-                <a 
-                  href={submission.researchPaperUrl} 
-                  target="_blank" 
-                  className="btn btn-secondary w-full"
-                >
-                  Open PDF in New Tab
-                </a>
-              </div>
-            ) : (
-              <p className="text-sm text-text-muted italic">No paper uploaded.</p>
-            )}
-          </div>
-
-
-          <div className="glass-card p-6">
-            <h3 className="text-lg font-bold mb-4">Internal Stats</h3>
-            <div className="space-y-4">
-              <div className="flex justify-between items-center py-2 border-b border-border text-sm">
-                <span className="text-text-muted">Total Screenshots</span>
-                <span className="font-bold">{submission.screenshotUrls.length}</span>
-              </div>
-              <div className="flex justify-between items-center py-2 border-b border-border text-sm">
-                <span className="text-text-muted">Last Edit</span>
-                <span className="font-bold text-xs">{new Date(submission.updatedAt).toLocaleString()}</span>
-              </div>
+              )}
             </div>
           </div>
+
+          {/* Chat Panel */}
+          <div className="glass-card p-0 overflow-hidden flex flex-col h-[500px]">
+            <div className="p-4 bg-bg-primary border-b border-border flex items-center justify-between">
+              <h2 className="text-lg font-bold text-gray-900 flex items-center gap-2"><FaCommentDots className="text-accent" /> Discussion</h2>
+              <p className="text-xs font-semibold text-gray-500">Communicate with students</p>
+            </div>
+            <div className="flex-1 overflow-hidden relative">
+              <CommentPanel submissionId={submission.id} isFullScreen />
+            </div>
+          </div>
+
         </div>
       </div>
     </div>

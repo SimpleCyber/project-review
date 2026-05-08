@@ -4,18 +4,17 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { useAuth } from "@/lib/AuthContext";
-import { FaGraduationCap, FaUser, FaEnvelope, FaLock, FaLayerGroup, FaUsers } from "react-icons/fa";
-import { FcGoogle } from "react-icons/fc";
+import { FaGraduationCap, FaUser, FaLock, FaLayerGroup, FaUsers, FaCalendarAlt } from "react-icons/fa";
 import { db } from "@/lib/firebase";
 import { collection, query, getDocs, orderBy, where, limit } from "firebase/firestore";
 import { Batch } from "@/lib/types";
 
 export default function RegisterPage() {
   const [name, setName] = useState("");
-  const [email, setEmail] = useState("");
-  const [regId, setRegId] = useState("");
   const [groupId, setGroupId] = useState("B1");
   const [batchId, setBatchId] = useState("");
+  const [year, setYear] = useState<number>(new Date().getFullYear());
+  const [semester, setSemester] = useState<number>(1);
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [batches, setBatches] = useState<Batch[]>([]);
@@ -24,7 +23,7 @@ export default function RegisterPage() {
   const [loading, setLoading] = useState(false);
   const [fetchingBatches, setFetchingBatches] = useState(true);
   
-  const { register, signInWithGoogle } = useAuth();
+  const { register } = useAuth();
   const router = useRouter();
 
   useEffect(() => {
@@ -36,6 +35,8 @@ export default function RegisterPage() {
         setBatches(batchData);
         if (batchData.length > 0) {
           setBatchId(batchData[0].id);
+          setYear(batchData[0].year);
+          setSemester(batchData[0].batchNumber);
           updateGroupsForBatch(batchData[0]);
         }
       } catch (err) {
@@ -54,11 +55,21 @@ export default function RegisterPage() {
     setGroupId(groups[0]);
   };
 
-  const handleBatchChange = (id: string) => {
-    setBatchId(id);
-    const selected = batches.find(b => b.id === id);
-    if (selected) updateGroupsForBatch(selected);
-  };
+  // Get unique years and semesters from available batches
+  const uniqueYears = [...new Set(batches.map(b => b.year))].sort((a, b) => b - a);
+  const availableSemesters = batches
+    .filter(b => b.year === year)
+    .map(b => ({ batchNumber: b.batchNumber, id: b.id }))
+    .sort((a, b) => a.batchNumber - b.batchNumber);
+
+  // When year or semester changes, find the matching batch and update groups
+  useEffect(() => {
+    const matchingBatch = batches.find(b => b.year === year && b.batchNumber === semester);
+    if (matchingBatch) {
+      setBatchId(matchingBatch.id);
+      updateGroupsForBatch(matchingBatch);
+    }
+  }, [year, semester, batches]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -73,7 +84,7 @@ export default function RegisterPage() {
     }
 
     if (!batchId) {
-      return setError("Please select a batch. If no batches exist, please wait for faculty setup.");
+      return setError("Please select a semester. If no semesters exist, please wait for faculty setup.");
     }
 
     setLoading(true);
@@ -88,26 +99,13 @@ export default function RegisterPage() {
       );
       const checkSnap = await getDocs(checkQuery);
       if (!checkSnap.empty) {
-        throw new Error(`Group ${groupId} is already registered for this batch.`);
+        throw new Error(`Group ${groupId} is already registered for this semester.`);
       }
 
-      await register(regId, email, password, name, groupId, batchId);
+      await register(password, name, groupId, batchId, year, semester);
       router.push("/dashboard");
     } catch (err: any) {
-      setError(err.message || "Registration failed. Registration ID might already be in use.");
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleGoogleSignIn = async () => {
-    setError("");
-    setLoading(true);
-    try {
-      await signInWithGoogle();
-      router.push("/dashboard");
-    } catch (err: any) {
-      setError(err.message || "Google sign-in failed.");
+      setError(err.message || "Registration failed. This group may already be registered.");
     } finally {
       setLoading(false);
     }
@@ -153,8 +151,8 @@ export default function RegisterPage() {
           </div>
 
           <div className="mb-8">
-            <h1 className="text-3xl font-extrabold text-sidebar mb-2 tracking-tight">Create an account</h1>
-            <p className="text-text-secondary">Enter your details to create your workspace.</p>
+            <h1 className="text-3xl font-extrabold text-sidebar mb-2 tracking-tight">Register your group</h1>
+            <p className="text-text-secondary">Set up your group workspace for project submission.</p>
           </div>
 
           {error && (
@@ -166,12 +164,12 @@ export default function RegisterPage() {
           <form onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-2 gap-5">
             <div className="md:col-span-2">
               <label className="label text-sm font-semibold text-sidebar mb-1 flex items-center gap-2" htmlFor="name">
-                <FaUser className="text-emerald" size={14} /> Full Name
+                <FaUser className="text-emerald" size={14} /> Group / Team Name
               </label>
               <input
                 id="name"
                 type="text"
-                placeholder="John Doe"
+                placeholder="e.g. Team Alpha or Group 15"
                 className="input py-3 !bg-white !border-gray-200"
                 value={name}
                 onChange={(e) => setName(e.target.value)}
@@ -179,63 +177,53 @@ export default function RegisterPage() {
               />
             </div>
 
-            <div className="md:col-span-2">
-              <label className="label text-sm font-semibold text-sidebar mb-1 flex items-center gap-2" htmlFor="email">
-                <FaEnvelope className="text-emerald" size={14} /> Email Address
-              </label>
-              <input
-                id="email"
-                type="email"
-                placeholder="john@university.edu"
-                className="input py-3 !bg-white !border-gray-200"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                required
-              />
-            </div>
-
             <div>
-              <label className="label text-sm font-semibold text-sidebar mb-1 flex items-center gap-2" htmlFor="regId">
-                <FaUser className="text-emerald" size={14} /> Registration ID
-              </label>
-              <input
-                id="regId"
-                type="text"
-                placeholder="CS2026001"
-                className="input py-3 !bg-white !border-gray-200"
-                value={regId}
-                onChange={(e) => setRegId(e.target.value)}
-                required
-              />
-            </div>
-
-            <div>
-              <label className="label text-sm font-semibold text-sidebar mb-1 flex items-center gap-2" htmlFor="batch">
-                <FaLayerGroup className="text-emerald" size={14} /> Batch / Year
+              <label className="label text-sm font-semibold text-sidebar mb-1 flex items-center gap-2" htmlFor="year">
+                <FaCalendarAlt className="text-emerald" size={14} /> Year
               </label>
               <select
-                id="batch"
+                id="year"
                 className="select py-3 !bg-white !border-gray-200"
-                value={batchId}
-                onChange={(e) => handleBatchChange(e.target.value)}
-                required
+                value={year}
+                onChange={(e) => setYear(parseInt(e.target.value))}
                 disabled={fetchingBatches}
               >
                 {fetchingBatches ? (
                   <option>Loading...</option>
-                ) : batches.length > 0 ? (
-                  batches.map((b) => (
-                    <option key={b.id} value={b.id}>{b.name}</option>
+                ) : uniqueYears.length > 0 ? (
+                  uniqueYears.map((y) => (
+                    <option key={y} value={y}>{y}-{y + 1}</option>
                   ))
                 ) : (
-                  <option value="">No batches</option>
+                  <option value="">No semesters</option>
+                )}
+              </select>
+            </div>
+
+            <div>
+              <label className="label text-sm font-semibold text-sidebar mb-1 flex items-center gap-2" htmlFor="semester">
+                <FaLayerGroup className="text-emerald" size={14} /> Semester
+              </label>
+              <select
+                id="semester"
+                className="select py-3 !bg-white !border-gray-200"
+                value={semester}
+                onChange={(e) => setSemester(parseInt(e.target.value))}
+                disabled={fetchingBatches}
+              >
+                {availableSemesters.length > 0 ? (
+                  availableSemesters.map((s) => (
+                    <option key={s.batchNumber} value={s.batchNumber}>Semester {s.batchNumber}</option>
+                  ))
+                ) : (
+                  <option value={1}>Semester 1</option>
                 )}
               </select>
             </div>
 
             <div className="md:col-span-2">
               <label className="label text-sm font-semibold text-sidebar mb-1 flex items-center gap-2" htmlFor="groupId">
-                <FaUsers className="text-emerald" size={14} /> Group ID
+                <FaUsers className="text-emerald" size={14} /> Group Number
               </label>
               <select
                 id="groupId"
@@ -288,21 +276,6 @@ export default function RegisterPage() {
               {loading ? <div className="spinner mx-auto" /> : "Sign Up"}
             </button>
           </form>
-
-          <div className="mt-8 flex items-center gap-4">
-            <div className="h-px bg-border flex-1" />
-            <span className="text-xs text-text-muted font-bold tracking-wider">OR CONTINUE WITH</span>
-            <div className="h-px bg-border flex-1" />
-          </div>
-
-          <button
-            onClick={handleGoogleSignIn}
-            disabled={loading}
-            className="w-full py-3 mt-8 flex items-center justify-center gap-3 bg-white border border-gray-200 rounded-lg text-sidebar font-semibold hover:bg-gray-50 transition-colors shadow-sm"
-          >
-            <FcGoogle size={20} />
-            Sign in with Google
-          </button>
 
           <div className="mt-10 text-center text-sm">
             <span className="text-text-muted">Already have an account? </span>

@@ -4,15 +4,24 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { useAuth } from "@/lib/AuthContext";
-import { FaGraduationCap, FaUser, FaLock } from "react-icons/fa";
-import { FcGoogle } from "react-icons/fc";
+import { db } from "@/lib/firebase";
+import { collection, query, getDocs, orderBy } from "firebase/firestore";
+import { Batch } from "@/lib/types";
+import { FaGraduationCap, FaUsers, FaLock, FaLayerGroup, FaCalendarAlt } from "react-icons/fa";
 
 export default function StudentLoginPage() {
-  const [idOrEmail, setIdOrEmail] = useState("");
+  const [year, setYear] = useState<number>(new Date().getFullYear());
+  const [semester, setSemester] = useState<number>(1);
+  const [groupId, setGroupId] = useState("B1");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
-  const { login, signInWithGoogle, user, isAdmin, loading: authLoading } = useAuth();
+
+  const [batches, setBatches] = useState<Batch[]>([]);
+  const [fetchingBatches, setFetchingBatches] = useState(true);
+  const [availableGroups, setAvailableGroups] = useState<string[]>(["B1", "B2", "B3", "B4", "B5"]);
+
+  const { login, user, isAdmin, loading: authLoading } = useAuth();
   const router = useRouter();
 
   useEffect(() => {
@@ -25,33 +34,63 @@ export default function StudentLoginPage() {
     }
   }, [user, isAdmin, authLoading, router]);
 
+  useEffect(() => {
+    async function fetchBatches() {
+      try {
+        const q = query(collection(db, "batches"), orderBy("year", "desc"), orderBy("batchNumber", "asc"));
+        const snapshot = await getDocs(q);
+        const batchData = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Batch));
+        setBatches(batchData);
+        if (batchData.length > 0) {
+          setYear(batchData[0].year);
+          setSemester(batchData[0].batchNumber);
+          updateGroupsForBatch(batchData[0]);
+        }
+      } catch (err) {
+        console.error("Error fetching batches:", err);
+      } finally {
+        setFetchingBatches(false);
+      }
+    }
+    fetchBatches();
+  }, []);
+
+  const updateGroupsForBatch = (batch: Batch) => {
+    const count = batch.maxGroups || 6;
+    const groups = Array.from({ length: count }, (_, i) => `B${i + 1}`);
+    setAvailableGroups(groups);
+    setGroupId(groups[0]);
+  };
+
+  // When year or semester changes, find the matching batch and update groups
+  useEffect(() => {
+    const matchingBatch = batches.find(b => b.year === year && b.batchNumber === semester);
+    if (matchingBatch) {
+      updateGroupsForBatch(matchingBatch);
+    }
+  }, [year, semester, batches]);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
     setLoading(true);
 
     try {
-      await login(idOrEmail, password);
+      await login(year, semester, groupId, password);
       router.push("/dashboard");
     } catch (err: any) {
-      setError(err.message || "Invalid credentials.");
+      setError(err.message || "Invalid credentials. Please check your group number and password.");
     } finally {
       setLoading(false);
     }
   };
 
-  const handleGoogleSignIn = async () => {
-    setError("");
-    setLoading(true);
-    try {
-      await signInWithGoogle();
-      router.push("/dashboard");
-    } catch (err: any) {
-      setError(err.message || "Google sign-in failed.");
-    } finally {
-      setLoading(false);
-    }
-  };
+  // Get unique years and semesters from available batches
+  const uniqueYears = [...new Set(batches.map(b => b.year))].sort((a, b) => b - a);
+  const availableSemesters = batches
+    .filter(b => b.year === year)
+    .map(b => b.batchNumber)
+    .sort((a, b) => a - b);
 
   return (
     <div className="min-h-screen flex bg-bg-secondary text-text-primary">
@@ -86,7 +125,7 @@ export default function StudentLoginPage() {
 
       {/* Right Side - Form */}
       <div className="w-full lg:w-1/2 flex flex-col justify-center items-center p-8 sm:p-12">
-        <div className="w-full max-w-[400px] animate-fade-in">
+        <div className="w-full max-w-[440px] animate-fade-in">
           
           {/* Logo for mobile only */}
           <div className="flex lg:hidden items-center gap-3 mb-10">
@@ -98,7 +137,7 @@ export default function StudentLoginPage() {
 
           <div className="mb-8">
             <h1 className="text-3xl font-extrabold text-sidebar mb-2 tracking-tight">Welcome back</h1>
-            <p className="text-text-secondary">Enter your details to access your workspace.</p>
+            <p className="text-text-secondary">Select your group details to access your workspace.</p>
           </div>
 
           {error && (
@@ -108,19 +147,66 @@ export default function StudentLoginPage() {
           )}
 
           <form onSubmit={handleSubmit} className="space-y-5">
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="label text-sm font-semibold text-sidebar mb-1 flex items-center gap-2" htmlFor="year">
+                  <FaCalendarAlt className="text-emerald" size={14} /> Year
+                </label>
+                <select
+                  id="year"
+                  className="select py-3 !bg-white !border-gray-200"
+                  value={year}
+                  onChange={(e) => setYear(parseInt(e.target.value))}
+                  disabled={fetchingBatches}
+                >
+                  {fetchingBatches ? (
+                    <option>Loading...</option>
+                  ) : uniqueYears.length > 0 ? (
+                    uniqueYears.map((y) => (
+                      <option key={y} value={y}>{y}-{y + 1}</option>
+                    ))
+                  ) : (
+                    <option value="">No batches</option>
+                  )}
+                </select>
+              </div>
+
+              <div>
+                <label className="label text-sm font-semibold text-sidebar mb-1 flex items-center gap-2" htmlFor="semester">
+                  <FaLayerGroup className="text-emerald" size={14} /> Semester
+                </label>
+                <select
+                  id="semester"
+                  className="select py-3 !bg-white !border-gray-200"
+                  value={semester}
+                  onChange={(e) => setSemester(parseInt(e.target.value))}
+                  disabled={fetchingBatches}
+                >
+                  {availableSemesters.length > 0 ? (
+                    availableSemesters.map((s) => (
+                      <option key={s} value={s}>Semester {s}</option>
+                    ))
+                  ) : (
+                    <option value={1}>Semester 1</option>
+                  )}
+                </select>
+              </div>
+            </div>
+
             <div>
-              <label className="label text-sm font-semibold text-sidebar mb-1 flex items-center gap-2" htmlFor="idOrEmail">
-                <FaUser className="text-emerald" size={14} /> Email / Registration ID
+              <label className="label text-sm font-semibold text-sidebar mb-1 flex items-center gap-2" htmlFor="groupId">
+                <FaUsers className="text-emerald" size={14} /> Group Number
               </label>
-              <input
-                id="idOrEmail"
-                type="text"
-                placeholder="name@university.edu or CS2026001"
-                className="input py-3 !bg-white !border-gray-200"
-                value={idOrEmail}
-                onChange={(e) => setIdOrEmail(e.target.value)}
-                required
-              />
+              <select
+                id="groupId"
+                className="select py-3 !bg-white !border-gray-200"
+                value={groupId}
+                onChange={(e) => setGroupId(e.target.value)}
+              >
+                {availableGroups.map((g) => (
+                  <option key={g} value={g}>{g}</option>
+                ))}
+              </select>
             </div>
 
             <div>
@@ -141,26 +227,11 @@ export default function StudentLoginPage() {
             <button
               type="submit"
               className="btn btn-primary w-full py-3.5 mt-2 shadow-sm rounded-lg font-bold"
-              disabled={loading}
+              disabled={loading || fetchingBatches}
             >
               {loading ? <div className="spinner" /> : "Sign In"}
             </button>
           </form>
-
-          <div className="mt-8 flex items-center gap-4">
-            <div className="h-px bg-border flex-1" />
-            <span className="text-xs text-text-muted font-bold tracking-wider">OR CONTINUE WITH</span>
-            <div className="h-px bg-border flex-1" />
-          </div>
-
-          <button
-            onClick={handleGoogleSignIn}
-            disabled={loading}
-            className="w-full py-3 mt-8 flex items-center justify-center gap-3 bg-white border border-gray-200 rounded-lg text-sidebar font-semibold hover:bg-gray-50 transition-colors shadow-sm"
-          >
-            <FcGoogle size={20} />
-            Sign in with Google
-          </button>
 
           <div className="mt-10 text-center text-sm">
             <span className="text-text-muted">Don't have an account? </span>

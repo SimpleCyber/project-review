@@ -7,8 +7,6 @@ import {
   createUserWithEmailAndPassword,
   signOut,
   User,
-  GoogleAuthProvider,
-  signInWithPopup,
 } from "firebase/auth";
 import { doc, getDoc, setDoc } from "firebase/firestore";
 import { auth, db } from "./firebase";
@@ -19,16 +17,15 @@ interface AuthContextValue {
   studentData: Student | null;
   isAdmin: boolean;
   loading: boolean;
-  login: (idOrEmail: string, password: string) => Promise<void>;
+  login: (year: number, semester: number, groupId: string, password: string) => Promise<void>;
   adminLogin: (email: string, password: string) => Promise<void>;
-  signInWithGoogle: () => Promise<void>;
   register: (
-    registrationId: string,
-    email: string,
     password: string,
     name: string,
     groupId: string,
-    batchId: string
+    batchId: string,
+    year: number,
+    semester: number
   ) => Promise<void>;
   setStudentData: React.Dispatch<React.SetStateAction<Student | null>>;
   logout: () => Promise<void>;
@@ -36,8 +33,13 @@ interface AuthContextValue {
 
 const AuthContext = createContext<AuthContextValue | undefined>(undefined);
 
-function makeEmail(registrationId: string): string {
-  return `${registrationId.toLowerCase().replace(/\s+/g, "")}@projectreview.local`;
+/**
+ * Constructs a deterministic internal email from year, semester, and groupId.
+ * Example: "2025-2026_semester1_b15@projectreview.local"
+ */
+function makeEmail(year: number, semester: number, groupId: string): string {
+  const yearRange = `${year}-${year + 1}`;
+  return `${yearRange}_semester${semester}_${groupId.toLowerCase()}@projectreview.local`;
 }
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
@@ -79,11 +81,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     return () => unsub();
   }, []);
 
-  async function login(idOrEmail: string, password: string) {
-    let email = idOrEmail;
-    if (!idOrEmail.includes("@")) {
-      email = makeEmail(idOrEmail);
-    }
+  async function login(year: number, semester: number, groupId: string, password: string) {
+    const email = makeEmail(year, semester, groupId);
     await signInWithEmailAndPassword(auth, email, password);
   }
 
@@ -91,23 +90,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     await signInWithEmailAndPassword(auth, email, password);
   }
 
-  async function signInWithGoogle() {
-    const provider = new GoogleAuthProvider();
-    await signInWithPopup(auth, provider);
-  }
-
   async function register(
-    registrationId: string,
-    email: string,
     password: string,
     name: string,
     groupId: string,
-    batchId: string
+    batchId: string,
+    year: number,
+    semester: number
   ) {
+    const email = makeEmail(year, semester, groupId);
     const cred = await createUserWithEmailAndPassword(auth, email, password);
     await setDoc(doc(db, "students", cred.user.uid), {
-      registrationId,
-      email,
       groupId,
       batchId,
       name,
@@ -123,7 +116,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   return (
     <AuthContext.Provider
-      value={{ user, studentData, setStudentData, isAdmin, loading, login, adminLogin, signInWithGoogle, register, logout }}
+      value={{ user, studentData, setStudentData, isAdmin, loading, login, adminLogin, register, logout }}
     >
       {children}
     </AuthContext.Provider>

@@ -20,10 +20,32 @@ export async function POST(request: Request) {
     const buffer = Buffer.from(bytes);
     const base64 = `data:${file.type};base64,${buffer.toString("base64")}`;
 
-    const uploadResponse = await cloudinary.uploader.upload(base64, {
+    // Determine resource type and format from file
+    const fileName = file.name || "";
+    const ext = fileName.split(".").pop()?.toLowerCase() || "";
+    const isPdf = ext === "pdf" || file.type === "application/pdf";
+    const isImage = file.type.startsWith("image/");
+
+    // For PDFs: use 'image' resource_type so Cloudinary returns a URL
+    // that browsers can render inline. If 'raw' is used, it forces a download.
+    const uploadOptions: Record<string, any> = {
       folder: "project-review",
-      resource_type: "auto",
-    });
+    };
+
+    if (isPdf) {
+      uploadOptions.resource_type = "image";
+      // We don't strictly need the extension in public_id for 'image', 
+      // but it helps keep it organized.
+      uploadOptions.public_id = `${Date.now()}_${fileName.replace(/\.pdf$/i, "")}`;
+    } else if (isImage) {
+      uploadOptions.resource_type = "image";
+    } else {
+      // For PPTs, DOCX, etc., use raw
+      uploadOptions.resource_type = "raw";
+      uploadOptions.public_id = `${Date.now()}_${fileName}`;
+    }
+
+    const uploadResponse = await cloudinary.uploader.upload(base64, uploadOptions);
 
     return NextResponse.json({ url: uploadResponse.secure_url });
   } catch (error: unknown) {

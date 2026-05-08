@@ -55,7 +55,6 @@ export default function ProfilePage() {
             studentId: studentData.id,
             batchId: studentData.batchId,
             groupId: studentData.groupId,
-            registrationId: studentData.registrationId,
             githubUrl: "",
             screenshotUrls: [],
             submittedAt: Date.now(),

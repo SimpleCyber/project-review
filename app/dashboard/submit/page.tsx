@@ -6,11 +6,12 @@ import { db } from "@/lib/firebase";
 import { 
   doc, getDoc, collection, query, where, getDocs, limit, setDoc, addDoc, updateDoc 
 } from "firebase/firestore";
-import { Batch, Submission } from "@/lib/types";
+import { Batch, Submission, CustomDocument } from "@/lib/types";
 import { useRouter } from "next/navigation";
 import { 
   FaGithub, FaLink, FaYoutube, FaCloudUploadAlt, FaFilePdf, 
-  FaTimes, FaImage, FaCheckCircle, FaExclamationTriangle, FaTrash 
+  FaTimes, FaImage, FaCheckCircle, FaExclamationTriangle, FaTrash,
+  FaFileAlt, FaFilePowerpoint, FaFileContract, FaTag
 } from "react-icons/fa";
 import ConfirmationModal from "@/components/ConfirmationModal";
 
@@ -30,12 +31,16 @@ export default function SubmissionPage() {
   const [youtubeUrl, setYoutubeUrl] = useState("");
   const [screenshots, setScreenshots] = useState<string[]>([]);
   const [paperUrl, setPaperUrl] = useState("");
+  const [pptUrl, setPptUrl] = useState("");
+  const [synopsisUrl, setSynopsisUrl] = useState("");
+  const [sponsorshipLetterUrl, setSponsorshipLetterUrl] = useState("");
+  const [customDocuments, setCustomDocuments] = useState<CustomDocument[]>([]);
   
   // Uploading state
   const [uploading, setUploading] = useState<string | null>(null);
 
   // Deletion State
-  const [deleteType, setDeleteType] = useState<"screenshot" | "paper" | null>(null);
+  const [deleteType, setDeleteType] = useState<"screenshot" | "paper" | "ppt" | "synopsis" | "sponsorship" | "custom" | null>(null);
   const [indexToDelete, setIndexToDelete] = useState<number | null>(null);
 
   useEffect(() => {
@@ -57,6 +62,10 @@ export default function SubmissionPage() {
           setYoutubeUrl(data.youtubeUrl || "");
           setScreenshots(data.screenshotUrls);
           setPaperUrl(data.researchPaperUrl || "");
+          setPptUrl(data.pptUrl || "");
+          setSynopsisUrl(data.synopsisUrl || "");
+          setSponsorshipLetterUrl(data.sponsorshipLetterUrl || "");
+          setCustomDocuments(data.customDocuments || []);
         }
 
         const batchDoc = await getDoc(doc(db, "batches", studentData.batchId));
@@ -72,8 +81,9 @@ export default function SubmissionPage() {
     fetchData();
   }, [studentData]);
 
-  const handleFileUpload = async (file: File, type: "image" | "pdf") => {
-    setUploading(type === "image" ? "screenshot" : "paper");
+  const handleFileUpload = async (file: File, type: "image" | "pdf" | "ppt" | "synopsis" | "sponsorship" | "custom", customIndex?: number) => {
+    const uploadKey = type === "image" ? "screenshot" : type === "custom" ? `custom_${customIndex}` : type;
+    setUploading(uploadKey);
     setError("");
     
     const formData = new FormData();
@@ -87,10 +97,31 @@ export default function SubmissionPage() {
       const data = await res.json();
       if (data.error) throw new Error(data.error);
 
-      if (type === "image") {
-        setScreenshots(prev => [...prev, data.url]);
-      } else {
-        setPaperUrl(data.url);
+      switch (type) {
+        case "image":
+          setScreenshots(prev => [...prev, data.url]);
+          break;
+        case "pdf":
+          setPaperUrl(data.url);
+          break;
+        case "ppt":
+          setPptUrl(data.url);
+          break;
+        case "synopsis":
+          setSynopsisUrl(data.url);
+          break;
+        case "sponsorship":
+          setSponsorshipLetterUrl(data.url);
+          break;
+        case "custom":
+          if (customIndex !== undefined) {
+            setCustomDocuments(prev => {
+              const updated = [...prev];
+              updated[customIndex] = { ...updated[customIndex], url: data.url };
+              return updated;
+            });
+          }
+          break;
       }
     } catch (err: any) {
       setError(err.message || "Failed to upload file.");
@@ -131,11 +162,36 @@ export default function SubmissionPage() {
     setDeleteType("screenshot");
   };
 
+  const addCustomDocument = () => {
+    setCustomDocuments(prev => [...prev, { label: "", url: "" }]);
+  };
+
+  const updateCustomDocLabel = (index: number, label: string) => {
+    setCustomDocuments(prev => {
+      const updated = [...prev];
+      updated[index] = { ...updated[index], label };
+      return updated;
+    });
+  };
+
+  const removeCustomDocument = (index: number) => {
+    setIndexToDelete(index);
+    setDeleteType("custom");
+  };
+
   const confirmDelete = () => {
     if (deleteType === "screenshot" && indexToDelete !== null) {
       setScreenshots(prev => prev.filter((_, i) => i !== indexToDelete));
     } else if (deleteType === "paper") {
       setPaperUrl("");
+    } else if (deleteType === "ppt") {
+      setPptUrl("");
+    } else if (deleteType === "synopsis") {
+      setSynopsisUrl("");
+    } else if (deleteType === "sponsorship") {
+      setSponsorshipLetterUrl("");
+    } else if (deleteType === "custom" && indexToDelete !== null) {
+      setCustomDocuments(prev => prev.filter((_, i) => i !== indexToDelete));
     }
     setDeleteType(null);
     setIndexToDelete(null);
@@ -159,22 +215,20 @@ export default function SubmissionPage() {
       return setError("Please upload at least one project screenshot.");
     }
 
-    if (!paperUrl) {
-      setSaving(false);
-      return setError("Please upload your research paper (PDF).");
-    }
-
     try {
       const submissionData = {
         studentId: studentData!.id,
         batchId: studentData!.batchId,
         groupId: studentData!.groupId,
-        registrationId: studentData!.registrationId,
         githubUrl,
         websiteUrl,
         youtubeUrl,
         screenshotUrls: screenshots,
         researchPaperUrl: paperUrl,
+        pptUrl,
+        synopsisUrl,
+        sponsorshipLetterUrl,
+        customDocuments: customDocuments.filter(d => d.label && d.url),
         updatedAt: Date.now(),
       };
 
@@ -201,6 +255,63 @@ export default function SubmissionPage() {
   if (loading) return <div className="space-y-6"><div className="h-80 skeleton" /></div>;
 
   const isLocked = batch?.isLocked || false;
+
+  // Helper to render a document upload card
+  const renderDocUpload = (
+    label: string,
+    icon: React.ReactNode,
+    url: string,
+    uploadType: "pdf" | "ppt" | "synopsis" | "sponsorship",
+    accept: string,
+    onDelete: () => void,
+    required = false
+  ) => (
+    <div className="glass-card p-6 space-y-4">
+      <h2 className="text-lg font-bold flex items-center gap-2">
+        {icon} {label} {required && <span className="text-rose-500 text-sm">*</span>}
+      </h2>
+      {url ? (
+        <div className="p-4 bg-accent-light border border-accent/20 rounded-xl flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-lg bg-accent/10 flex items-center justify-center text-accent">
+              {icon}
+            </div>
+            <div>
+              <p className="text-sm font-semibold">Document Uploaded</p>
+              <a href={url} target="_blank" className="text-xs text-accent hover:underline">View document</a>
+            </div>
+          </div>
+          {!isLocked && (
+            <button onClick={onDelete} className="text-text-muted hover:text-rose-400 p-2">
+              <FaTimes />
+            </button>
+          )}
+        </div>
+      ) : (
+        <label className={`
+          dropzone flex flex-col items-center justify-center min-h-[120px]
+          ${isLocked ? "cursor-not-allowed opacity-50" : ""}
+        `}>
+          <input 
+            type="file" 
+            className="hidden" 
+            accept={accept}
+            onChange={(e) => e.target.files?.[0] && handleFileUpload(e.target.files[0], uploadType)}
+            disabled={isLocked || uploading === uploadType}
+          />
+          {uploading === uploadType ? (
+            <div className="spinner" />
+          ) : (
+            <>
+              <FaCloudUploadAlt size={28} className="text-text-muted mb-2" />
+              <p className="text-sm font-medium mb-1">Click to upload {label}</p>
+              <p className="text-xs text-text-muted">{accept === "application/pdf" ? "PDF" : "PDF, PPT, PPTX, DOC, DOCX"} (Max 10MB)</p>
+            </>
+          )}
+        </label>
+      )}
+    </div>
+  );
 
   return (
     <div className="space-y-8 animate-fade-in pb-12">
@@ -284,100 +395,163 @@ export default function SubmissionPage() {
           </div>
         </div>
 
-        {/* Media Section */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-          {/* Screenshots */}
-          <div className="glass-card p-6 space-y-6">
-            <h2 className="text-xl font-bold flex items-center gap-2">
-              <FaImage className="text-emerald-400" /> Screenshots <span className="text-rose-500 text-sm">*</span>
-            </h2>
-            
-            <div className="grid grid-cols-3 gap-3">
-              {screenshots.map((url, i) => (
-                <div key={i} className="relative aspect-square rounded-lg border border-border bg-bg-primary overflow-hidden group">
-                  <img src={url} alt="Screenshot" className="w-full h-full object-cover" />
-                  {!isLocked && (
-                    <button 
-                      onClick={() => removeScreenshot(i)}
-                      className="absolute inset-0 bg-rose-500/80 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
-                    >
-                      <FaTrash className="text-white" />
-                    </button>
-                  )}
-                </div>
-              ))}
-              
-              {!isLocked && screenshots.length < 6 && (
-                <label className="aspect-square rounded-lg border-2 border-dashed border-border hover:border-accent flex flex-col items-center justify-center cursor-pointer transition-all hover:bg-accent-light">
-                  <input 
-                    type="file" 
-                    className="hidden" 
-                    accept="image/*"
-                    multiple
-                    onChange={(e) => {
-                      if (e.target.files && e.target.files.length > 0) {
-                        handleMultipleImageUploads(Array.from(e.target.files));
-                      }
-                    }}
-                    disabled={uploading === "screenshot"}
-                  />
-                  {uploading === "screenshot" ? <div className="spinner" /> : <><FaPlus className="text-text-muted mb-1" /><span className="text-[10px] text-text-muted font-bold uppercase">Add</span></>}
-                </label>
-              )}
-            </div>
-            <p className="text-xs text-text-muted italic">Upload up to 6 screenshots of your project UI/Hardware.</p>
-          </div>
-
-          {/* Research Paper */}
-          <div className="glass-card p-6 space-y-6">
-            <h2 className="text-xl font-bold flex items-center gap-2">
-              <FaFilePdf className="text-rose-400" /> Research Paper <span className="text-rose-500 text-sm">*</span>
-            </h2>
-
-            {paperUrl ? (
-              <div className="p-4 bg-accent-light border border-accent/20 rounded-xl flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-lg bg-rose-400/10 flex items-center justify-center text-rose-400">
-                    <FaFilePdf size={20} />
-                  </div>
-                  <div>
-                    <p className="text-sm font-semibold">Document Uploaded</p>
-                    <a href={paperUrl} target="_blank" className="text-xs text-accent hover:underline">View current PDF</a>
-                  </div>
-                </div>
+        {/* Screenshots Section */}
+        <div className="glass-card p-6 space-y-6">
+          <h2 className="text-xl font-bold flex items-center gap-2">
+            <FaImage className="text-emerald-400" /> Screenshots <span className="text-rose-500 text-sm">*</span>
+          </h2>
+          
+          <div className="grid grid-cols-3 gap-3">
+            {screenshots.map((url, i) => (
+              <div key={i} className="relative aspect-square rounded-lg border border-border bg-bg-primary overflow-hidden group">
+                <img src={url} alt="Screenshot" className="w-full h-full object-cover" />
                 {!isLocked && (
                   <button 
-                    onClick={() => setDeleteType("paper")}
-                    className="text-text-muted hover:text-rose-400 p-2"
+                    onClick={() => removeScreenshot(i)}
+                    className="absolute inset-0 bg-rose-500/80 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
                   >
-                    <FaTimes />
+                    <FaTrash className="text-white" />
                   </button>
                 )}
               </div>
-            ) : (
-              <label className={`
-                dropzone flex flex-col items-center justify-center h-full min-h-[140px]
-                ${isLocked ? "cursor-not-allowed opacity-50" : ""}
-              `}>
+            ))}
+            
+            {!isLocked && screenshots.length < 6 && (
+              <label className="aspect-square rounded-lg border-2 border-dashed border-border hover:border-accent flex flex-col items-center justify-center cursor-pointer transition-all hover:bg-accent-light">
                 <input 
                   type="file" 
                   className="hidden" 
-                  accept="application/pdf"
-                  onChange={(e) => e.target.files?.[0] && handleFileUpload(e.target.files[0], "pdf")}
-                  disabled={isLocked || uploading === "paper"}
+                  accept="image/*"
+                  multiple
+                  onChange={(e) => {
+                    if (e.target.files && e.target.files.length > 0) {
+                      handleMultipleImageUploads(Array.from(e.target.files));
+                    }
+                  }}
+                  disabled={uploading === "screenshot"}
                 />
-                {uploading === "paper" ? (
-                  <div className="spinner" />
-                ) : (
-                  <>
-                    <FaCloudUploadAlt size={32} className="text-text-muted mb-3" />
-                    <p className="text-sm font-medium mb-1">Click to upload Research Paper</p>
-                    <p className="text-xs text-text-muted">PDF format only (Max 10MB)</p>
-                  </>
-                )}
+                {uploading === "screenshot" ? <div className="spinner" /> : <><FaPlusIcon className="text-text-muted mb-1" /><span className="text-[10px] text-text-muted font-bold uppercase">Add</span></>}
               </label>
             )}
           </div>
+          <p className="text-xs text-text-muted italic">Upload up to 6 screenshots of your project UI/Hardware.</p>
+        </div>
+
+        {/* Documents Section */}
+        <div>
+          <h2 className="text-xl font-bold flex items-center gap-2 mb-6">
+            <FaFileAlt className="text-accent" /> Documents
+          </h2>
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            {renderDocUpload(
+              "Research Paper",
+              <FaFilePdf className="text-rose-400" size={20} />,
+              paperUrl,
+              "pdf",
+              "application/pdf",
+              () => setDeleteType("paper"),
+              false
+            )}
+            {renderDocUpload(
+              "PPT / Presentation",
+              <FaFilePowerpoint className="text-orange-400" size={20} />,
+              pptUrl,
+              "ppt",
+              ".pdf,.ppt,.pptx",
+              () => setDeleteType("ppt")
+            )}
+            {renderDocUpload(
+              "Synopsis",
+              <FaFileAlt className="text-blue-400" size={20} />,
+              synopsisUrl,
+              "synopsis",
+              ".pdf,.doc,.docx",
+              () => setDeleteType("synopsis")
+            )}
+            {renderDocUpload(
+              "Sponsorship Letter",
+              <FaFileContract className="text-purple-400" size={20} />,
+              sponsorshipLetterUrl,
+              "sponsorship",
+              ".pdf,.doc,.docx",
+              () => setDeleteType("sponsorship")
+            )}
+          </div>
+        </div>
+
+        {/* Custom Documents Section */}
+        <div className="glass-card p-6 space-y-6">
+          <div className="flex items-center justify-between">
+            <h2 className="text-xl font-bold flex items-center gap-2">
+              <FaTag className="text-teal-400" /> Custom Documents
+            </h2>
+            {!isLocked && (
+              <button 
+                type="button" 
+                onClick={addCustomDocument}
+                className="btn btn-secondary btn-sm gap-2"
+              >
+                <FaPlusIcon className="text-accent" /> Add Document
+              </button>
+            )}
+          </div>
+
+          {customDocuments.length === 0 ? (
+            <p className="text-sm text-text-muted italic text-center py-6">
+              No custom documents added. Click "Add Document" to upload additional files.
+            </p>
+          ) : (
+            <div className="space-y-4">
+              {customDocuments.map((cd, i) => (
+                <div key={i} className="p-4 border border-border rounded-xl bg-bg-primary space-y-3">
+                  <div className="flex items-center gap-3">
+                    <input
+                      type="text"
+                      placeholder="Document label (e.g. Certificate, NOC)"
+                      className="input input-sm flex-1"
+                      value={cd.label}
+                      onChange={(e) => updateCustomDocLabel(i, e.target.value)}
+                      disabled={isLocked}
+                    />
+                    {!isLocked && (
+                      <button
+                        type="button"
+                        onClick={() => removeCustomDocument(i)}
+                        className="text-text-muted hover:text-rose-500 p-2"
+                      >
+                        <FaTrash size={14} />
+                      </button>
+                    )}
+                  </div>
+
+                  {cd.url ? (
+                    <div className="flex items-center gap-3 p-3 bg-emerald-50 border border-emerald-100 rounded-lg">
+                      <FaCheckCircle className="text-emerald-500" />
+                      <a href={cd.url} target="_blank" className="text-sm text-emerald-700 hover:underline font-medium">View uploaded file</a>
+                    </div>
+                  ) : (
+                    <label className="dropzone flex flex-col items-center justify-center min-h-[80px] !p-4">
+                      <input
+                        type="file"
+                        className="hidden"
+                        accept=".pdf,.doc,.docx,.ppt,.pptx,.xls,.xlsx,.jpg,.jpeg,.png"
+                        onChange={(e) => e.target.files?.[0] && handleFileUpload(e.target.files[0], "custom", i)}
+                        disabled={isLocked || uploading === `custom_${i}`}
+                      />
+                      {uploading === `custom_${i}` ? (
+                        <div className="spinner" />
+                      ) : (
+                        <>
+                          <FaCloudUploadAlt size={20} className="text-text-muted mb-1" />
+                          <p className="text-xs text-text-muted">Click to upload</p>
+                        </>
+                      )}
+                    </label>
+                  )}
+                </div>
+              ))}
+            </div>
+          )}
         </div>
 
         {!isLocked && (
@@ -402,8 +576,8 @@ export default function SubmissionPage() {
 
       <ConfirmationModal
         isOpen={deleteType !== null}
-        title={`Remove ${deleteType === "screenshot" ? "Screenshot" : "Research Paper"}?`}
-        message={`Are you sure you want to remove this ${deleteType === "screenshot" ? "screenshot" : "research paper document"}? This cannot be undone.`}
+        title={`Remove ${deleteType === "screenshot" ? "Screenshot" : deleteType === "paper" ? "Research Paper" : deleteType === "ppt" ? "PPT" : deleteType === "synopsis" ? "Synopsis" : deleteType === "sponsorship" ? "Sponsorship Letter" : "Document"}?`}
+        message={`Are you sure you want to remove this document? This cannot be undone.`}
         onConfirm={confirmDelete}
         onCancel={() => {
           setDeleteType(null);
@@ -414,6 +588,6 @@ export default function SubmissionPage() {
   );
 }
 
-function FaPlus({ className }: { className?: string }) {
+function FaPlusIcon({ className }: { className?: string }) {
   return <svg className={className} width="16" height="16" fill="currentColor" viewBox="0 0 16 16"><path d="M8 4a.5.5 0 0 1 .5.5v3h3a.5.5 0 0 1 0 1h-3v3a.5.5 0 0 1-1 0v-3h-3a.5.5 0 0 1 0-1h3v-3A.5.5 0 0 1 8 4z"/></svg>;
 }

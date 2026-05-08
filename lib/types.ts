@@ -1,18 +1,16 @@
 export interface Batch {
   id: string;
-  name: string;           // e.g. "2026 Batch 1"
+  name: string;           // e.g. "2025-2026 Semester 1"
   year: number;
-  batchNumber: number;
+  batchNumber: number;    // 1 = Semester 1, 2 = Semester 2
   isLocked: boolean;
-  maxGroups: number;      // Number of groups allowed (e.g. 6 means B1-B6)
+  maxGroups: number;      // Number of groups allowed (e.g. 15 means B1-B15)
   createdAt: number;      // timestamp ms
 }
 
 export interface Student {
   id: string;             // Firestore doc ID = Firebase Auth UID
-  registrationId: string; // e.g. "CS2026001"
-  email: string;          // student email
-  groupId: string;        // e.g. "B1", "B2"
+  groupId: string;        // e.g. "B1", "B15"
   batchId: string;        // reference to Batch.id
   name: string;
   createdAt: number;
@@ -28,18 +26,30 @@ export interface ProjectMember {
   profilePictureUrl?: string; // Cloudinary URL
 }
 
+export interface CustomDocument {
+  label: string;
+  url: string;
+}
+
+export type ReviewStatus = "pending_review" | "under_review" | "review_done";
+
 export interface Submission {
   id: string;
   studentId: string;       // Firebase Auth UID
   batchId: string;
   groupId: string;
-  registrationId: string;
   githubUrl: string;
   websiteUrl?: string;
   screenshotUrls: string[];
   youtubeUrl?: string;
   researchPaperUrl?: string;
+  pptUrl?: string;
+  synopsisUrl?: string;
+  sponsorshipLetterUrl?: string;
+  customDocuments?: CustomDocument[];
   members?: ProjectMember[];
+  reviewStatus?: ReviewStatus;
+  reviewComment?: string;
   submittedAt: number;
   updatedAt: number;
 }

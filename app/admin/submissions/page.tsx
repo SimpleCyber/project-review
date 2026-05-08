@@ -47,8 +47,7 @@ export default function SubmissionsOverview() {
 
   const filteredSubmissions = submissions.filter(s => {
     const matchesBatch = filterBatch === "all" || s.batchId === filterBatch;
-    const matchesSearch = s.registrationId.toLowerCase().includes(searchQuery.toLowerCase()) || 
-                          s.groupId.toLowerCase().includes(searchQuery.toLowerCase());
+    const matchesSearch = s.groupId.toLowerCase().includes(searchQuery.toLowerCase());
     return matchesBatch && matchesSearch;
   });
 
@@ -99,9 +98,9 @@ export default function SubmissionsOverview() {
         <table>
           <thead>
             <tr>
-              <th>Student Reg ID</th>
-              <th>Batch</th>
               <th>Group</th>
+              <th>Semester</th>
+              <th>Status</th>
               <th>Links</th>
               <th>Last Updated</th>
               <th>Actions</th>
@@ -117,14 +116,22 @@ export default function SubmissionsOverview() {
             ) : (
               filteredSubmissions.map((sub) => (
                 <tr key={sub.id}>
-                  <td className="font-semibold text-text-primary">{sub.registrationId}</td>
+                  <td><span className="badge badge-info">{sub.groupId}</span></td>
                   <td>
                     <span className="flex items-center gap-2">
                       <FaLayerGroup size={12} className="text-accent" />
                       {batches.find(b => b.id === sub.batchId)?.name || "Unknown"}
                     </span>
                   </td>
-                  <td><span className="badge badge-info">{sub.groupId}</span></td>
+                  <td>
+                    <span className={`badge ${
+                      sub.reviewStatus === 'review_done' ? 'badge-success' : 
+                      sub.reviewStatus === 'under_review' ? 'badge-info' : 'badge-warning'
+                    }`}>
+                      {sub.reviewStatus === 'review_done' ? 'Done' : 
+                       sub.reviewStatus === 'under_review' ? 'Reviewing' : 'Pending'}
+                    </span>
+                  </td>
                   <td>
                     <div className="flex gap-3">
                       <a href={sub.githubUrl} target="_blank" className="text-text-muted hover:text-accent"><FaGithub /></a>
