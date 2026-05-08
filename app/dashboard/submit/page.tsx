@@ -81,54 +81,7 @@ export default function SubmissionPage() {
     fetchData();
   }, [studentData]);
 
-  const handleFileUpload = async (file: File, type: "image" | "pdf" | "ppt" | "synopsis" | "sponsorship" | "custom", customIndex?: number) => {
-    const uploadKey = type === "image" ? "screenshot" : type === "custom" ? `custom_${customIndex}` : type;
-    setUploading(uploadKey);
-    setError("");
-    
-    const formData = new FormData();
-    formData.append("file", file);
 
-    try {
-      const res = await fetch("/api/cloudinary/upload", {
-        method: "POST",
-        body: formData,
-      });
-      const data = await res.json();
-      if (data.error) throw new Error(data.error);
-
-      switch (type) {
-        case "image":
-          setScreenshots(prev => [...prev, data.url]);
-          break;
-        case "pdf":
-          setPaperUrl(data.url);
-          break;
-        case "ppt":
-          setPptUrl(data.url);
-          break;
-        case "synopsis":
-          setSynopsisUrl(data.url);
-          break;
-        case "sponsorship":
-          setSponsorshipLetterUrl(data.url);
-          break;
-        case "custom":
-          if (customIndex !== undefined) {
-            setCustomDocuments(prev => {
-              const updated = [...prev];
-              updated[customIndex] = { ...updated[customIndex], url: data.url };
-              return updated;
-            });
-          }
-          break;
-      }
-    } catch (err: any) {
-      setError(err.message || "Failed to upload file.");
-    } finally {
-      setUploading(null);
-    }
-  };
 
   const handleMultipleImageUploads = async (files: File[]) => {
     setUploading("screenshot");
@@ -170,6 +123,14 @@ export default function SubmissionPage() {
     setCustomDocuments(prev => {
       const updated = [...prev];
       updated[index] = { ...updated[index], label };
+      return updated;
+    });
+  };
+
+  const updateCustomDocUrl = (index: number, url: string) => {
+    setCustomDocuments(prev => {
+      const updated = [...prev];
+      updated[index] = { ...updated[index], url };
       return updated;
     });
   };
@@ -256,60 +217,27 @@ export default function SubmissionPage() {
 
   const isLocked = batch?.isLocked || false;
 
-  // Helper to render a document upload card
-  const renderDocUpload = (
+  const renderDocInput = (
     label: string,
     icon: React.ReactNode,
-    url: string,
-    uploadType: "pdf" | "ppt" | "synopsis" | "sponsorship",
-    accept: string,
-    onDelete: () => void,
-    required = false
+    value: string,
+    onChange: (val: string) => void,
+    placeholder: string
   ) => (
-    <div className="glass-card p-6 space-y-4">
-      <h2 className="text-lg font-bold flex items-center gap-2">
-        {icon} {label} {required && <span className="text-rose-500 text-sm">*</span>}
-      </h2>
-      {url ? (
-        <div className="p-4 bg-accent-light border border-accent/20 rounded-xl flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-lg bg-accent/10 flex items-center justify-center text-accent">
-              {icon}
-            </div>
-            <div>
-              <p className="text-sm font-semibold">Document Uploaded</p>
-              <a href={url} target="_blank" className="text-xs text-accent hover:underline">View document</a>
-            </div>
-          </div>
-          {!isLocked && (
-            <button onClick={onDelete} className="text-text-muted hover:text-rose-400 p-2">
-              <FaTimes />
-            </button>
-          )}
-        </div>
-      ) : (
-        <label className={`
-          dropzone flex flex-col items-center justify-center min-h-[120px]
-          ${isLocked ? "cursor-not-allowed opacity-50" : ""}
-        `}>
-          <input 
-            type="file" 
-            className="hidden" 
-            accept={accept}
-            onChange={(e) => e.target.files?.[0] && handleFileUpload(e.target.files[0], uploadType)}
-            disabled={isLocked || uploading === uploadType}
-          />
-          {uploading === uploadType ? (
-            <div className="spinner" />
-          ) : (
-            <>
-              <FaCloudUploadAlt size={28} className="text-text-muted mb-2" />
-              <p className="text-sm font-medium mb-1">Click to upload {label}</p>
-              <p className="text-xs text-text-muted">{accept === "application/pdf" ? "PDF" : "PDF, PPT, PPTX, DOC, DOCX"} (Max 10MB)</p>
-            </>
-          )}
-        </label>
-      )}
+    <div>
+      <label className="flex items-center gap-1.5 mb-1.5 text-[0.85rem] font-medium text-text-primary">
+        {icon} {label}
+      </label>
+      <div className="relative mt-1">
+        <input
+          type="url"
+          placeholder={placeholder}
+          className="input"
+          value={value}
+          onChange={(e) => onChange(e.target.value)}
+          disabled={isLocked}
+        />
+      </div>
     </div>
   );
 
@@ -438,43 +366,39 @@ export default function SubmissionPage() {
         </div>
 
         {/* Documents Section */}
-        <div>
-          <h2 className="text-xl font-bold flex items-center gap-2 mb-6">
-            <FaFileAlt className="text-accent" /> Documents
+        <div className="glass-card p-6 space-y-6">
+          <h2 className="text-xl font-bold flex items-center gap-2 mb-2">
+            <FaFileAlt className="text-accent" /> Document Links
           </h2>
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            {renderDocUpload(
-              "Research Paper",
-              <FaFilePdf className="text-rose-400" size={20} />,
+          <p className="text-xs text-text-muted mb-6">Provide public links (e.g. Google Drive, Google Docs) for your project documents.</p>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {renderDocInput(
+              "Research Paper Link",
+              <FaFilePdf className="text-rose-400" size={14} />,
               paperUrl,
-              "pdf",
-              "application/pdf",
-              () => setDeleteType("paper"),
-              false
+              setPaperUrl,
+              "https://docs.google.com/..."
             )}
-            {renderDocUpload(
-              "PPT / Presentation",
-              <FaFilePowerpoint className="text-orange-400" size={20} />,
+            {renderDocInput(
+              "PPT / Presentation Link",
+              <FaFilePowerpoint className="text-orange-400" size={14} />,
               pptUrl,
-              "ppt",
-              ".pdf,.ppt,.pptx",
-              () => setDeleteType("ppt")
+              setPptUrl,
+              "https://docs.google.com/presentation/..."
             )}
-            {renderDocUpload(
-              "Synopsis",
-              <FaFileAlt className="text-blue-400" size={20} />,
+            {renderDocInput(
+              "Synopsis Link",
+              <FaFileAlt className="text-blue-400" size={14} />,
               synopsisUrl,
-              "synopsis",
-              ".pdf,.doc,.docx",
-              () => setDeleteType("synopsis")
+              setSynopsisUrl,
+              "https://docs.google.com/..."
             )}
-            {renderDocUpload(
-              "Sponsorship Letter",
-              <FaFileContract className="text-purple-400" size={20} />,
+            {renderDocInput(
+              "Sponsorship Letter Link",
+              <FaFileContract className="text-purple-400" size={14} />,
               sponsorshipLetterUrl,
-              "sponsorship",
-              ".pdf,.doc,.docx",
-              () => setDeleteType("sponsorship")
+              setSponsorshipLetterUrl,
+              "https://drive.google.com/..."
             )}
           </div>
         </div>
@@ -483,7 +407,7 @@ export default function SubmissionPage() {
         <div className="glass-card p-6 space-y-6">
           <div className="flex items-center justify-between">
             <h2 className="text-xl font-bold flex items-center gap-2">
-              <FaTag className="text-teal-400" /> Custom Documents
+              <FaTag className="text-teal-400" /> Additional Links
             </h2>
             {!isLocked && (
               <button 
@@ -491,62 +415,43 @@ export default function SubmissionPage() {
                 onClick={addCustomDocument}
                 className="btn btn-secondary btn-sm gap-2"
               >
-                <FaPlusIcon className="text-accent" /> Add Document
+                <FaPlusIcon className="text-accent" /> Add Link
               </button>
             )}
           </div>
 
           {customDocuments.length === 0 ? (
             <p className="text-sm text-text-muted italic text-center py-6">
-              No custom documents added. Click "Add Document" to upload additional files.
+              No additional links added. Click "Add Link" to provide more resources.
             </p>
           ) : (
             <div className="space-y-4">
               {customDocuments.map((cd, i) => (
-                <div key={i} className="p-4 border border-border rounded-xl bg-bg-primary space-y-3">
-                  <div className="flex items-center gap-3">
-                    <input
-                      type="text"
-                      placeholder="Document label (e.g. Certificate, NOC)"
-                      className="input input-sm flex-1"
-                      value={cd.label}
-                      onChange={(e) => updateCustomDocLabel(i, e.target.value)}
-                      disabled={isLocked}
-                    />
-                    {!isLocked && (
-                      <button
-                        type="button"
-                        onClick={() => removeCustomDocument(i)}
-                        className="text-text-muted hover:text-rose-500 p-2"
-                      >
-                        <FaTrash size={14} />
-                      </button>
-                    )}
-                  </div>
-
-                  {cd.url ? (
-                    <div className="flex items-center gap-3 p-3 bg-emerald-50 border border-emerald-100 rounded-lg">
-                      <FaCheckCircle className="text-emerald-500" />
-                      <a href={cd.url} target="_blank" className="text-sm text-emerald-700 hover:underline font-medium">View uploaded file</a>
-                    </div>
-                  ) : (
-                    <label className="dropzone flex flex-col items-center justify-center min-h-[80px] !p-4">
-                      <input
-                        type="file"
-                        className="hidden"
-                        accept=".pdf,.doc,.docx,.ppt,.pptx,.xls,.xlsx,.jpg,.jpeg,.png"
-                        onChange={(e) => e.target.files?.[0] && handleFileUpload(e.target.files[0], "custom", i)}
-                        disabled={isLocked || uploading === `custom_${i}`}
-                      />
-                      {uploading === `custom_${i}` ? (
-                        <div className="spinner" />
-                      ) : (
-                        <>
-                          <FaCloudUploadAlt size={20} className="text-text-muted mb-1" />
-                          <p className="text-xs text-text-muted">Click to upload</p>
-                        </>
-                      )}
-                    </label>
+                <div key={i} className="p-4 border border-border rounded-xl bg-bg-primary flex flex-col md:flex-row gap-3">
+                  <input
+                    type="text"
+                    placeholder="Label (e.g. Certificate, NOC)"
+                    className="input input-sm md:w-1/3"
+                    value={cd.label}
+                    onChange={(e) => updateCustomDocLabel(i, e.target.value)}
+                    disabled={isLocked}
+                  />
+                  <input
+                    type="url"
+                    placeholder="URL (e.g. https://drive.google.com/...)"
+                    className="input input-sm flex-1"
+                    value={cd.url}
+                    onChange={(e) => updateCustomDocUrl(i, e.target.value)}
+                    disabled={isLocked}
+                  />
+                  {!isLocked && (
+                    <button
+                      type="button"
+                      onClick={() => removeCustomDocument(i)}
+                      className="text-text-muted hover:text-rose-500 p-2 flex-shrink-0"
+                    >
+                      <FaTrash size={14} />
+                    </button>
                   )}
                 </div>
               ))}

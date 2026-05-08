@@ -12,6 +12,7 @@ export default function AdminOverview() {
     activeBatches: 0,
   });
   const [recentSubs, setRecentSubs] = useState<any[]>([]);
+  const [batchList, setBatchList] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -30,6 +31,7 @@ export default function AdminOverview() {
           activeBatches: batches.docs.filter(d => !d.data().isLocked).length,
         });
         setRecentSubs(recentSnap.docs.map(doc => ({ id: doc.id, ...doc.data() })));
+        setBatchList(batches.docs.map(doc => ({ id: doc.id, ...doc.data() })));
       } catch (err) {
         console.error("Error fetching stats:", err);
       } finally {
@@ -53,25 +55,25 @@ export default function AdminOverview() {
         <p className="text-secondary">Track student participation and project submissions in real-time.</p>
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         {statCards.map((card, i) => (
-          <div key={i} className="stat-card">
-            <div className="flex items-center justify-between mb-4">
-              <div className={`w-12 h-12 rounded-xl ${card.bg} flex items-center justify-center ${card.color}`}>
-                <card.icon size={24} />
-              </div>
+          <div key={i} className="stat-card !p-4 flex items-center gap-4">
+            <div className={`w-10 h-10 rounded-xl ${card.bg} flex items-center justify-center shrink-0 ${card.color}`}>
+              <card.icon size={20} />
             </div>
-            <p className="text-text-muted text-sm font-medium">{card.label}</p>
-            <h3 className="text-3xl font-bold mt-1">
-              {loading ? <div className="h-8 w-16 skeleton" /> : card.value}
-            </h3>
+            <div>
+              <p className="text-text-muted text-[10px] font-bold uppercase tracking-wider">{card.label}</p>
+              <h3 className="text-xl font-bold leading-none mt-1">
+                {loading ? <div className="h-5 w-10 skeleton" /> : card.value}
+              </h3>
+            </div>
           </div>
         ))}
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-        <div className="glass-card p-6">
-          <h2 className="text-xl font-bold mb-6">Recent Activity</h2>
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div className="glass-card p-5 lg:col-span-2">
+          <h2 className="text-lg font-bold mb-4">Recent Activity</h2>
           <div className="space-y-4">
             {loading ? (
               Array(4).fill(0).map((_, i) => <div key={i} className="h-12 w-full skeleton" />)
@@ -86,7 +88,7 @@ export default function AdminOverview() {
                     </div>
                     <div>
                       <p className="text-sm font-semibold">Group {sub.groupId}</p>
-                      <p className="text-xs text-text-muted">{batches.find(b => b.id === sub.batchId)?.name || "Unknown Batch"}</p>
+                      <p className="text-xs text-text-muted">{batchList.find(b => b.id === sub.batchId)?.name || "Unknown Batch"}</p>
                     </div>
                   </div>
                   <a href={`/admin/submissions/${sub.id}`} className="btn btn-secondary btn-sm px-3">View</a>
@@ -96,11 +98,11 @@ export default function AdminOverview() {
           </div>
         </div>
 
-        <div className="glass-card p-6 flex flex-col items-center justify-center text-center">
-          <div className="w-20 h-20 bg-accent-light rounded-full flex items-center justify-center text-accent mb-4">
-            <FaLayerGroup size={32} />
+        <div className="glass-card p-5 flex flex-col items-center justify-center text-center lg:col-span-1">
+          <div className="w-12 h-12 bg-accent-light rounded-full flex items-center justify-center text-accent mb-3">
+            <FaLayerGroup size={20} />
           </div>
-          <h2 className="text-xl font-bold mb-2">Batch Management</h2>
+          <h2 className="text-base font-bold mb-2">Batch Management</h2>
           <p className="text-secondary text-sm mb-6 max-w-xs">
             Start by creating a new batch so students can register and submit their projects.
           </p>

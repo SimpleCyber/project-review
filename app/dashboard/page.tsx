@@ -141,9 +141,9 @@ export default function StudentDashboard() {
         <div className="alert alert-error animate-fade-in">{error}</div>
       )}
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <div className="stat-card">
-          <h2 className="text-lg font-semibold mb-6 flex items-center gap-2">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="stat-card !p-5">
+          <h2 className="text-base font-semibold mb-4 flex items-center gap-2">
             <FaCheckCircle className={submission ? "text-emerald-500" : "text-text-muted"} /> 
             Submission Status
           </h2>
@@ -193,9 +193,9 @@ export default function StudentDashboard() {
           )}
         </div>
 
-        <div className="stat-card group transition-all hover:border-accent/40">
-          <div className="flex justify-between items-center mb-4">
-            <h2 className="text-lg font-semibold">User Details</h2>
+        <div className="stat-card !p-5 group transition-all hover:border-accent/40">
+          <div className="flex justify-between items-center mb-3">
+            <h2 className="text-base font-semibold">User Details</h2>
             {!isEditingProfile && (
               <button 
                 onClick={handleStartEdit}
@@ -283,8 +283,8 @@ export default function StudentDashboard() {
 
       {/* Direct Chat / Discussion Panel */}
       {submission && (
-        <div className="stat-card p-0 overflow-hidden flex flex-col h-[500px]">
-          <div className="p-4 bg-gray-50 border-b border-gray-100 flex items-center justify-between">
+        <div className="stat-card p-0 overflow-hidden flex flex-col h-[350px]">
+          <div className="px-4 py-3 bg-gray-50 border-b border-gray-100 flex items-center justify-between">
             <h2 className="text-lg font-bold text-gray-900">Project Discussion</h2>
             <p className="text-xs font-semibold text-gray-500">Communicate with faculty</p>
           </div>

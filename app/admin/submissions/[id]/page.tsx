@@ -101,13 +101,13 @@ export default function SubmissionDetail() {
   const renderDocLink = (label: string, url: string | undefined, icon: React.ReactNode, color: string, key?: React.Key) => {
     if (!url) return null;
     return (
-      <a key={key} href={url} target="_blank" rel="noreferrer" className={`flex items-center gap-4 p-4 rounded-2xl bg-bg-primary border border-border shadow-sm hover:border-${color}-300 hover:shadow-md group transition-all`}>
-        <div className={`w-12 h-12 rounded-xl bg-${color}-50 flex items-center justify-center text-${color}-500 shrink-0`}>
+      <a key={key} href={url} target="_blank" rel="noreferrer" className={`flex items-center gap-3 p-3 rounded-xl bg-bg-primary border border-border hover:border-${color}-300 transition-all`}>
+        <div className={`w-8 h-8 rounded-lg bg-${color}-50 flex items-center justify-center text-${color}-500 shrink-0`}>
           {icon}
         </div>
-        <div className="min-w-0">
-          <p className="text-[10px] text-gray-500 font-bold uppercase tracking-wider mb-0.5">{label}</p>
-          <p className="font-extrabold text-sm text-gray-800 truncate">View Document</p>
+        <div className="min-w-0 flex-1 flex justify-between items-center">
+          <p className="text-xs font-bold text-gray-800 truncate">{label}</p>
+          <p className="text-[10px] font-bold uppercase text-accent hover:underline ml-2">Open Link</p>
         </div>
       </a>
     );
@@ -137,7 +137,7 @@ export default function SubmissionDetail() {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         
         {/* Left Column: Media & Links */}
         <div className="lg:col-span-2 space-y-8">
@@ -164,15 +164,15 @@ export default function SubmissionDetail() {
 
           {/* Structured Documents List */}
           <div className="glass-card p-6">
-            <h3 className="text-xl font-bold mb-6 flex items-center gap-3">
-              <FaFileAlt className="text-accent" /> Submitted Documents
+            <h3 className="text-lg font-bold mb-4 flex items-center gap-2">
+              <FaFileAlt className="text-accent" /> Submitted Document Links
             </h3>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              {renderDocLink("Research Paper", submission.researchPaperUrl, <FaFilePdf size={22} />, "rose")}
-              {renderDocLink("PPT / Presentation", submission.pptUrl, <FaFilePowerpoint size={22} />, "orange")}
-              {renderDocLink("Synopsis", submission.synopsisUrl, <FaFileAlt size={22} />, "blue")}
-              {renderDocLink("Sponsorship Letter", submission.sponsorshipLetterUrl, <FaFileContract size={22} />, "purple")}
-              {submission.customDocuments?.map((cd, i) => renderDocLink(cd.label, cd.url, <FaTag size={22} />, "teal", i))}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              {renderDocLink("Research Paper", submission.researchPaperUrl, <FaFilePdf size={16} />, "rose")}
+              {renderDocLink("PPT / Presentation", submission.pptUrl, <FaFilePowerpoint size={16} />, "orange")}
+              {renderDocLink("Synopsis", submission.synopsisUrl, <FaFileAlt size={16} />, "blue")}
+              {renderDocLink("Sponsorship Letter", submission.sponsorshipLetterUrl, <FaFileContract size={16} />, "purple")}
+              {submission.customDocuments?.map((cd, i) => renderDocLink(cd.label, cd.url, <FaTag size={16} />, "teal", i))}
             </div>
 
             {!submission.researchPaperUrl && !submission.pptUrl && !submission.synopsisUrl && !submission.sponsorshipLetterUrl && (!submission.customDocuments || submission.customDocuments.length === 0) && (
@@ -204,13 +204,13 @@ export default function SubmissionDetail() {
               </h3>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 {submission.members.map((member, i) => (
-                  <div key={i} className="p-4 rounded-2xl bg-bg-primary border border-border flex items-start gap-4 hover:border-accent/30 transition-all">
-                    <div className="w-14 h-14 rounded-xl bg-gray-200 overflow-hidden shrink-0 border border-border">
+                  <div key={i} className="p-3 rounded-xl bg-bg-primary border border-border flex items-center gap-3 hover:border-accent/30 transition-all">
+                    <div className="w-10 h-10 rounded-full bg-gray-200 overflow-hidden shrink-0 border border-border">
                       {member.profilePictureUrl ? (
                          <img src={member.profilePictureUrl} alt={member.fullName} className="w-full h-full object-cover" />
                       ) : (
                          <div className="w-full h-full flex items-center justify-center text-gray-400">
-                            <FaIdCard size={24} />
+                            <FaIdCard size={18} />
                          </div>
                       )}
                     </div>
@@ -282,10 +282,10 @@ export default function SubmissionDetail() {
           </div>
 
           {/* Chat Panel */}
-          <div className="glass-card p-0 overflow-hidden flex flex-col h-[500px]">
-            <div className="p-4 bg-bg-primary border-b border-border flex items-center justify-between">
-              <h2 className="text-lg font-bold text-gray-900 flex items-center gap-2"><FaCommentDots className="text-accent" /> Discussion</h2>
-              <p className="text-xs font-semibold text-gray-500">Communicate with students</p>
+          <div className="glass-card p-0 overflow-hidden flex flex-col h-[350px]">
+            <div className="px-4 py-3 bg-bg-primary border-b border-border flex items-center justify-between">
+              <h2 className="text-base font-bold text-gray-900 flex items-center gap-2"><FaCommentDots className="text-accent" /> Discussion</h2>
+              <p className="text-[10px] font-semibold uppercase text-gray-500">With students</p>
             </div>
             <div className="flex-1 overflow-hidden relative">
               <CommentPanel submissionId={submission.id} isFullScreen />
