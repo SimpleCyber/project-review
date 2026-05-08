@@ -242,9 +242,9 @@ export default function SubmissionPage() {
   );
 
   return (
-    <div className="space-y-8 animate-fade-in pb-12">
+    <div className="space-y-5 animate-fade-in pb-6">
       <div>
-        <h1 className="text-3xl font-bold mb-2">Project Submission</h1>
+        <h1 className="text-2xl font-bold mb-1">Project Submission</h1>
         <p className="text-secondary">Provide all necessary details and links for your final year project.</p>
       </div>
 
@@ -261,9 +261,9 @@ export default function SubmissionPage() {
         </div>
       )}
 
-      <form onSubmit={handleSubmit} className="space-y-8">
+      <form onSubmit={handleSubmit} className="space-y-5">
         {/* Core Links Section */}
-        <div className="glass-card p-6 space-y-6">
+        <div className="glass-card p-4 space-y-4">
           <h2 className="text-xl font-bold flex items-center gap-2">
             <FaLink className="text-accent" /> Links & Repositories
           </h2>
@@ -324,7 +324,7 @@ export default function SubmissionPage() {
         </div>
 
         {/* Screenshots Section */}
-        <div className="glass-card p-6 space-y-6">
+        <div className="glass-card p-4 space-y-4">
           <h2 className="text-xl font-bold flex items-center gap-2">
             <FaImage className="text-emerald-400" /> Screenshots <span className="text-rose-500 text-sm">*</span>
           </h2>
@@ -366,11 +366,11 @@ export default function SubmissionPage() {
         </div>
 
         {/* Documents Section */}
-        <div className="glass-card p-6 space-y-6">
+        <div className="glass-card p-4 space-y-4">
           <h2 className="text-xl font-bold flex items-center gap-2 mb-2">
             <FaFileAlt className="text-accent" /> Document Links
           </h2>
-          <p className="text-xs text-text-muted mb-6">Provide public links (e.g. Google Drive, Google Docs) for your project documents.</p>
+          <p className="text-xs text-text-muted mb-4">Provide public links (e.g. Google Drive, Google Docs) for your project documents.</p>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {renderDocInput(
               "Research Paper Link",
@@ -404,7 +404,7 @@ export default function SubmissionPage() {
         </div>
 
         {/* Custom Documents Section */}
-        <div className="glass-card p-6 space-y-6">
+        <div className="glass-card p-4 space-y-4">
           <div className="flex items-center justify-between">
             <h2 className="text-xl font-bold flex items-center gap-2">
               <FaTag className="text-teal-400" /> Additional Links

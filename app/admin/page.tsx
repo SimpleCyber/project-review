@@ -49,9 +49,9 @@ export default function AdminOverview() {
   ];
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-5">
       <div>
-        <h1 className="text-3xl font-bold mb-2">Faculty Dashboard</h1>
+        <h1 className="text-2xl font-bold mb-1">Faculty Dashboard</h1>
         <p className="text-secondary">Track student participation and project submissions in real-time.</p>
       </div>
 
@@ -71,10 +71,10 @@ export default function AdminOverview() {
         ))}
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <div className="glass-card p-5 lg:col-span-2">
-          <h2 className="text-lg font-bold mb-4">Recent Activity</h2>
-          <div className="space-y-4">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+        <div className="glass-card p-4 lg:col-span-2">
+          <h2 className="text-lg font-bold mb-3">Recent Activity</h2>
+          <div className="space-y-3">
             {loading ? (
               Array(4).fill(0).map((_, i) => <div key={i} className="h-12 w-full skeleton" />)
             ) : recentSubs.length === 0 ? (
@@ -98,12 +98,12 @@ export default function AdminOverview() {
           </div>
         </div>
 
-        <div className="glass-card p-5 flex flex-col items-center justify-center text-center lg:col-span-1">
-          <div className="w-12 h-12 bg-accent-light rounded-full flex items-center justify-center text-accent mb-3">
+        <div className="glass-card p-4 flex flex-col items-center justify-center text-center lg:col-span-1">
+          <div className="w-10 h-10 bg-accent-light rounded-full flex items-center justify-center text-accent mb-2">
             <FaLayerGroup size={20} />
           </div>
           <h2 className="text-base font-bold mb-2">Batch Management</h2>
-          <p className="text-secondary text-sm mb-6 max-w-xs">
+          <p className="text-secondary text-sm mb-4 max-w-xs">
             Start by creating a new batch so students can register and submit their projects.
           </p>
           <a href="/admin/batches" className="btn btn-primary w-full max-w-xs">

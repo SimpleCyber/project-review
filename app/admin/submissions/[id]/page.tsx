@@ -7,9 +7,8 @@ import { Submission, Batch, Student, ReviewStatus } from "@/lib/types";
 import { useParams, useRouter } from "next/navigation";
 import { 
   FaArrowLeft, FaGithub, FaLink, FaFilePdf, FaYoutube, 
-  FaImage, FaUserFriends, FaEnvelope, FaIdCard, FaCheckCircle, FaClock, FaSearch, FaFilePowerpoint, FaFileAlt, FaFileContract, FaTag, FaCommentDots 
+  FaImage, FaUserFriends, FaEnvelope, FaIdCard, FaCheckCircle, FaClock, FaSearch, FaFilePowerpoint, FaFileAlt, FaFileContract, FaTag, FaTimes
 } from "react-icons/fa";
-import CommentPanel from "@/components/CommentPanel";
 
 const STATUS_CONFIG: Record<ReviewStatus, { label: string; icon: React.ReactNode; color: string; bg: string; border: string }> = {
   pending_review: { label: "Pending", icon: <FaClock size={12} />, color: "text-amber-600", bg: "bg-amber-50", border: "border-amber-200" },
@@ -29,6 +28,8 @@ export default function SubmissionDetail() {
   const [updatingStatus, setUpdatingStatus] = useState(false);
   const [reviewComment, setReviewComment] = useState("");
   const [showCommentInput, setShowCommentInput] = useState(false);
+  const [expandedImage, setExpandedImage] = useState<string | null>(null);
+  const [showAllScreenshots, setShowAllScreenshots] = useState(false);
 
   useEffect(() => {
     async function fetchData() {
@@ -114,7 +115,7 @@ export default function SubmissionDetail() {
   };
 
   return (
-    <div className="space-y-8 animate-fade-in pb-20">
+    <div className="space-y-5 animate-fade-in pb-10">
       <button 
         onClick={() => router.back()}
         className="btn btn-secondary btn-sm gap-2 text-text-muted hover:text-primary"
@@ -124,7 +125,7 @@ export default function SubmissionDetail() {
 
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          <h1 className="text-4xl font-bold mb-2">{student?.name || "Student Submission"}</h1>
+          <h1 className="text-2xl font-bold mb-1">{student?.name || "Student Submission"}</h1>
           <p className="text-secondary flex items-center gap-2">
             <span className="badge badge-info text-sm">Group {submission.groupId}</span>
             <span className="text-text-muted">•</span>
@@ -137,13 +138,13 @@ export default function SubmissionDetail() {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
         
         {/* Left Column: Media & Links */}
-        <div className="lg:col-span-2 space-y-8">
+        <div className="lg:col-span-2 space-y-5">
           
           {/* Main Links */}
-          <div className="glass-card p-6 grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div className="glass-card p-4 grid grid-cols-1 sm:grid-cols-2 gap-4">
             <a href={submission.githubUrl} target="_blank" className="flex items-center gap-4 p-4 rounded-xl bg-bg-primary border hover:border-accent transition-all">
               <div className="w-12 h-12 rounded-lg bg-indigo-500/10 flex items-center justify-center text-indigo-400"><FaGithub size={24} /></div>
               <div><p className="text-xs text-text-muted font-bold uppercase">Repository</p><p className="font-semibold text-sm">View GitHub</p></div>
@@ -163,8 +164,8 @@ export default function SubmissionDetail() {
           </div>
 
           {/* Structured Documents List */}
-          <div className="glass-card p-6">
-            <h3 className="text-lg font-bold mb-4 flex items-center gap-2">
+          <div className="glass-card p-4">
+            <h3 className="text-lg font-bold mb-3 flex items-center gap-2">
               <FaFileAlt className="text-accent" /> Submitted Document Links
             </h3>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -182,13 +183,27 @@ export default function SubmissionDetail() {
 
           {/* Screenshots Gallery */}
           {submission.screenshotUrls && submission.screenshotUrls.length > 0 && (
-            <div className="glass-card p-6">
-              <h3 className="text-xl font-bold mb-6 flex items-center gap-3">
-                <FaImage className="text-blue-500" /> Screenshots
-              </h3>
+            <div className="glass-card p-4">
+              <div className="flex items-center justify-between mb-3">
+                <h3 className="text-lg font-bold flex items-center gap-3">
+                  <FaImage className="text-blue-500" /> Screenshots
+                </h3>
+                {submission.screenshotUrls.length > 2 && (
+                  <button 
+                    onClick={() => setShowAllScreenshots(!showAllScreenshots)}
+                    className="text-xs font-bold text-accent hover:underline uppercase tracking-wider"
+                  >
+                    {showAllScreenshots ? "Show Less" : `View All ${submission.screenshotUrls.length}`}
+                  </button>
+                )}
+              </div>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                {submission.screenshotUrls.map((url, i) => (
-                  <div key={i} className="rounded-xl overflow-hidden border border-border shadow-md">
+                {(showAllScreenshots ? submission.screenshotUrls : submission.screenshotUrls.slice(0, 2)).map((url, i) => (
+                  <div 
+                    key={i} 
+                    className="rounded-xl overflow-hidden border border-border shadow-md cursor-pointer"
+                    onClick={() => setExpandedImage(url)}
+                  >
                     <img src={url} alt={`Screenshot ${i+1}`} className="w-full h-auto hover:scale-105 transition-transform" />
                   </div>
                 ))}
@@ -198,8 +213,8 @@ export default function SubmissionDetail() {
 
           {/* Group Members Section */}
           {submission.members && submission.members.length > 0 && (
-            <div className="glass-card p-6">
-              <h3 className="text-xl font-bold mb-6 flex items-center gap-3">
+            <div className="glass-card p-4">
+              <h3 className="text-lg font-bold mb-3 flex items-center gap-3">
                 <FaUserFriends className="text-emerald-500" /> Group Members
               </h3>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -227,12 +242,12 @@ export default function SubmissionDetail() {
         </div>
 
         {/* Right Column: Review Status & Chat */}
-        <div className="space-y-8">
+        <div className="space-y-5">
           
           {/* Status Control Panel */}
-          <div className="glass-card p-6">
-            <h3 className="text-lg font-bold mb-4 flex items-center gap-2"><FaCheckCircle className="text-emerald-500" /> Review Status</h3>
-            <div className={`inline-flex items-center gap-2 px-4 py-2 rounded-full text-sm font-bold ${statusInfo.bg} ${statusInfo.color} border mb-6`}>
+          <div className="glass-card p-4">
+            <h3 className="text-lg font-bold mb-3 flex items-center gap-2"><FaCheckCircle className="text-emerald-500" /> Review Status</h3>
+            <div className={`inline-flex items-center gap-2 px-4 py-2 rounded-full text-sm font-bold ${statusInfo.bg} ${statusInfo.color} border mb-4`}>
               {statusInfo.icon} {statusInfo.label}
             </div>
 
@@ -281,19 +296,21 @@ export default function SubmissionDetail() {
             </div>
           </div>
 
-          {/* Chat Panel */}
-          <div className="glass-card p-0 overflow-hidden flex flex-col h-[350px]">
-            <div className="px-4 py-3 bg-bg-primary border-b border-border flex items-center justify-between">
-              <h2 className="text-base font-bold text-gray-900 flex items-center gap-2"><FaCommentDots className="text-accent" /> Discussion</h2>
-              <p className="text-[10px] font-semibold uppercase text-gray-500">With students</p>
-            </div>
-            <div className="flex-1 overflow-hidden relative">
-              <CommentPanel submissionId={submission.id} isFullScreen />
-            </div>
-          </div>
-
         </div>
       </div>
+
+      {expandedImage && (
+        <div 
+          className="fixed inset-0 z-[100] bg-black/80 flex items-center justify-center p-4 cursor-zoom-out animate-fade-in backdrop-blur-sm"
+          onClick={() => setExpandedImage(null)}
+        >
+          <img 
+            src={expandedImage} 
+            alt="Expanded Screenshot" 
+            className="max-w-full max-h-full object-contain rounded-xl shadow-2xl" 
+          />
+        </div>
+      )}
     </div>
   );
 }

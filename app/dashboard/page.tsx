@@ -9,7 +9,6 @@ import { FaFileUpload, FaCheckCircle, FaExclamationTriangle, FaGithub, FaLink, F
 import Link from "next/link";
 import { updateDoc } from "firebase/firestore";
 import SubmissionSidebar from "@/components/SubmissionSidebar";
-import CommentPanel from "@/components/CommentPanel";
 
 export default function StudentDashboard() {
   const { studentData, setStudentData } = useAuth();
@@ -280,19 +279,6 @@ export default function StudentDashboard() {
           )}
         </div>
       </div>
-
-      {/* Direct Chat / Discussion Panel */}
-      {submission && (
-        <div className="stat-card p-0 overflow-hidden flex flex-col h-[350px]">
-          <div className="px-4 py-3 bg-gray-50 border-b border-gray-100 flex items-center justify-between">
-            <h2 className="text-lg font-bold text-gray-900">Project Discussion</h2>
-            <p className="text-xs font-semibold text-gray-500">Communicate with faculty</p>
-          </div>
-          <div className="flex-1 overflow-hidden relative">
-            <CommentPanel submissionId={submission.id} isFullScreen />
-          </div>
-        </div>
-      )}
 
       {submission && (
         <SubmissionSidebar 

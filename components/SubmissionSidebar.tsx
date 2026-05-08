@@ -1,13 +1,12 @@
 "use client";
 
 import { useState } from "react";
-import { FaTimes, FaGithub, FaLink, FaYoutube, FaFilePdf, FaImage, FaUserFriends, FaUserGraduate, FaIdCard, FaEnvelope, FaExpand, FaFilePowerpoint, FaFileAlt, FaFileContract, FaTag, FaCheckCircle, FaClock, FaSearch, FaCommentDots } from "react-icons/fa";
+import { FaTimes, FaGithub, FaLink, FaYoutube, FaFilePdf, FaImage, FaUserFriends, FaUserGraduate, FaIdCard, FaEnvelope, FaExpand, FaFilePowerpoint, FaFileAlt, FaFileContract, FaTag, FaCheckCircle, FaClock, FaSearch } from "react-icons/fa";
 import Link from "next/link";
 import { Submission, Student, Batch, ReviewStatus } from "@/lib/types";
 import { useAuth } from "@/lib/AuthContext";
 import { db } from "@/lib/firebase";
 import { doc, updateDoc } from "firebase/firestore";
-import CommentPanel from "./CommentPanel";
 
 interface SubmissionSidebarProps {
   isOpen: boolean;
@@ -26,10 +25,11 @@ const STATUS_CONFIG: Record<ReviewStatus, { label: string; icon: React.ReactNode
 
 export default function SubmissionSidebar({ isOpen, onClose, submission, student, batch, onStatusUpdate }: SubmissionSidebarProps) {
   const { isAdmin } = useAuth();
-  const [activeTab, setActiveTab] = useState<"details" | "chat">("details");
   const [updatingStatus, setUpdatingStatus] = useState(false);
   const [reviewComment, setReviewComment] = useState(submission?.reviewComment || "");
   const [showCommentInput, setShowCommentInput] = useState(false);
+  const [expandedImage, setExpandedImage] = useState<string | null>(null);
+  const [showAllScreenshots, setShowAllScreenshots] = useState(false);
 
   if (!isOpen || !submission) return null;
 
@@ -90,17 +90,8 @@ export default function SubmissionSidebar({ isOpen, onClose, submission, student
           </div>
         </div>
 
-        {/* Tabs */}
-        <div className="flex border-b border-gray-100">
-          <button onClick={() => setActiveTab("details")} className={`flex-1 py-3 text-sm font-bold ${activeTab === "details" ? "text-emerald-600 border-b-2 border-emerald-500" : "text-gray-400"}`}>Details</button>
-          <button onClick={() => setActiveTab("chat")} className={`flex-1 py-3 text-sm font-bold flex items-center justify-center gap-2 ${activeTab === "chat" ? "text-emerald-600 border-b-2 border-emerald-500" : "text-gray-400"}`}><FaCommentDots /> Discussion</button>
-        </div>
-
         {/* Content */}
-        {activeTab === "chat" ? (
-          <div className="flex-1 overflow-hidden"><CommentPanel submissionId={submission.id} isFullScreen /></div>
-        ) : (
-          <div className="flex-1 overflow-y-auto p-6 space-y-6 bg-[#f8fafc]">
+        <div className="flex-1 overflow-y-auto p-6 space-y-6 bg-[#f8fafc]">
             {/* Status */}
             <div className="bg-white rounded-2xl border p-6">
               <h3 className="text-lg font-extrabold mb-4 flex items-center gap-2"><FaCheckCircle className="text-emerald-500" /> Review Status</h3>
@@ -175,17 +166,44 @@ export default function SubmissionSidebar({ isOpen, onClose, submission, student
             {/* Screenshots */}
             {submission.screenshotUrls && submission.screenshotUrls.length > 0 && (
               <div className="bg-white rounded-2xl border p-6">
-                <h3 className="text-lg font-extrabold mb-5 flex items-center gap-2"><FaImage className="text-blue-500" /> Screenshots</h3>
+                <div className="flex items-center justify-between mb-5">
+                  <h3 className="text-lg font-extrabold flex items-center gap-2"><FaImage className="text-blue-500" /> Screenshots</h3>
+                  {submission.screenshotUrls.length > 2 && (
+                    <button 
+                      onClick={() => setShowAllScreenshots(!showAllScreenshots)}
+                      className="text-xs font-bold text-accent hover:underline uppercase tracking-wider"
+                    >
+                      {showAllScreenshots ? "Show Less" : `View All ${submission.screenshotUrls.length}`}
+                    </button>
+                  )}
+                </div>
                 <div className="grid grid-cols-2 gap-4">
-                  {submission.screenshotUrls.map((url, i) => (
-                    <img key={i} src={url} alt={`Screenshot ${i}`} className="rounded-xl border" />
+                  {(showAllScreenshots ? submission.screenshotUrls : submission.screenshotUrls.slice(0, 2)).map((url, i) => (
+                    <img 
+                      key={i} 
+                      src={url} 
+                      alt={`Screenshot ${i}`} 
+                      className="rounded-xl border cursor-pointer hover:scale-105 transition-transform" 
+                      onClick={() => setExpandedImage(url)}
+                    />
                   ))}
                 </div>
               </div>
             )}
           </div>
-        )}
       </div>
+      {expandedImage && (
+        <div 
+          className="fixed inset-0 z-[100] bg-black/80 flex items-center justify-center p-4 cursor-zoom-out animate-fade-in backdrop-blur-sm"
+          onClick={() => setExpandedImage(null)}
+        >
+          <img 
+            src={expandedImage} 
+            alt="Expanded Screenshot" 
+            className="max-w-full max-h-full object-contain rounded-xl shadow-2xl" 
+          />
+        </div>
+      )}
     </>
   );
 }
