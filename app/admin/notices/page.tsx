@@ -5,7 +5,8 @@ import { db } from "@/lib/firebase";
 import { collection, query, getDocs, orderBy, addDoc, doc, getDoc, where } from "firebase/firestore";
 import { Batch, Notice, NoticeReadReceipt } from "@/lib/types";
 import { useAuth } from "@/lib/AuthContext";
-import { FaBell, FaPlus, FaCheckCircle, FaClock, FaUsers, FaCalendarAlt, FaTimes } from "react-icons/fa";
+import { FaBell, FaPlus, FaCheckCircle, FaClock, FaUsers, FaCalendarAlt, FaTimes, FaHistory, FaChevronLeft, FaChevronRight } from "react-icons/fa";
+import { startAfter, limit as firestoreLimit } from "firebase/firestore";
 
 const DEFAULT_NOTICES = [
   { title: "Upcoming Review", content: "Dear Students, your project review is scheduled on [Date] at [Time]. Please be prepared with your PPTs." },
@@ -28,6 +29,13 @@ export default function ManageNotices() {
   const [success, setSuccess] = useState("");
   const [error, setError] = useState("");
   const [selectedNoticeId, setSelectedNoticeId] = useState<string | null>(null);
+
+  // History State
+  const [showHistory, setShowHistory] = useState(false);
+  const [historyNotices, setHistoryNotices] = useState<Notice[]>([]);
+  const [lastVisible, setLastVisible] = useState<any>(null);
+  const [historyLoading, setHistoryLoading] = useState(false);
+  const [hasMore, setHasMore] = useState(true);
 
   useEffect(() => {
     async function fetchData() {
@@ -88,6 +96,39 @@ export default function ManageNotices() {
 
   const getReadCount = (noticeId: string) => {
     return receipts.filter(r => r.noticeId === noticeId).length;
+  };
+
+  const fetchHistory = async (isNext = true) => {
+    setHistoryLoading(true);
+    try {
+      let q = query(
+        collection(db, "notices"), 
+        orderBy("createdAt", "desc"), 
+        firestoreLimit(2)
+      );
+
+      if (isNext && lastVisible) {
+        q = query(q, startAfter(lastVisible));
+      }
+
+      const snap = await getDocs(q);
+      const docs = snap.docs.map(doc => ({ id: doc.id, ...doc.data() } as Notice));
+      
+      if (docs.length < 2) setHasMore(false);
+      else setHasMore(true);
+
+      setHistoryNotices(docs);
+      setLastVisible(snap.docs[snap.docs.length - 1]);
+    } catch (err) {
+      console.error("Error fetching history:", err);
+    } finally {
+      setHistoryLoading(false);
+    }
+  };
+
+  const openHistory = () => {
+    setShowHistory(true);
+    fetchHistory(false);
   };
 
   return (
@@ -163,48 +204,125 @@ export default function ManageNotices() {
           </div>
 
           <div className="glass-card p-6">
-            <h2 className="text-xl font-bold mb-6 flex items-center gap-2">
-              <FaClock className="text-blue-400" /> Recent Notices
-            </h2>
+            <div className="flex justify-between items-center mb-6">
+              <h2 className="text-xl font-bold flex items-center gap-2">
+                <FaClock className="text-blue-400" /> Latest Notice
+              </h2>
+              <button 
+                onClick={openHistory}
+                className="flex items-center gap-2 text-[10px] font-bold uppercase text-text-muted hover:text-accent transition-colors bg-bg-secondary px-3 py-1.5 rounded-lg border border-border"
+              >
+                <FaHistory size={12} /> View History
+              </button>
+            </div>
             
             <div className="space-y-4">
               {loading ? (
-                Array(3).fill(0).map((_, i) => <div key={i} className="h-20 w-full skeleton" />)
+                <div className="h-40 w-full skeleton" />
               ) : notices.length === 0 ? (
                 <p className="text-center py-10 text-text-muted italic">No notices sent yet.</p>
               ) : (
-                notices.map(notice => (
-                  <div key={notice.id} className="p-4 rounded-2xl bg-bg-primary border border-border/50 hover:border-accent transition-all">
-                    <div className="flex justify-between items-start mb-2">
-                      <div>
-                        <h3 className="font-bold text-lg">{notice.title}</h3>
-                        <p className="text-[10px] font-bold uppercase text-accent">
-                          Batch: {batches.find(b => b.id === notice.batchId)?.name || "Unknown"}
-                        </p>
-                      </div>
-                      <span className="text-[10px] text-text-muted font-bold">
-                        {new Date(notice.createdAt).toLocaleDateString()}
-                      </span>
+                <div key={notices[0].id} className="p-4 rounded-xl border border-border bg-bg-secondary/30">
+                  <div className="flex justify-between items-start mb-2">
+                    <div>
+                      <h4 className="font-bold text-text-primary">{notices[0].title}</h4>
+                      <p className="text-[10px] font-bold uppercase text-accent mt-0.5">
+                        Batch: {batches.find(b => b.id === notices[0].batchId)?.name || "Unknown"}
+                      </p>
                     </div>
-                    <p className="text-sm text-secondary line-clamp-2 mb-4">{notice.content}</p>
-                    <div className="flex items-center justify-between pt-3 border-t border-border/30">
-                      <div className="flex items-center gap-2 text-xs font-bold text-emerald-500">
-                        <FaUsers size={14} />
-                        {getReadCount(notice.id)} Students Confirmed
-                      </div>
-                      <button 
-                        onClick={() => setSelectedNoticeId(notice.id)}
-                        className="text-[10px] font-bold uppercase text-accent hover:underline"
-                      >
-                        View Receipts
-                      </button>
-                    </div>
+                    <span className="text-[10px] text-text-muted font-bold">{new Date(notices[0].createdAt).toLocaleDateString()}</span>
                   </div>
-                ))
+                  <p className="text-xs text-secondary mb-4">{notices[0].content}</p>
+                  <div className="flex items-center justify-between pt-3 border-t border-border/50">
+                    <div className="flex items-center gap-2 text-[10px] font-bold text-emerald-500 uppercase tracking-wider">
+                      <FaUsers size={12} />
+                      {getReadCount(notices[0].id)} Confirmed
+                    </div>
+                    <button 
+                      onClick={() => setSelectedNoticeId(notices[0].id)}
+                      className="text-[10px] font-bold uppercase text-accent hover:underline"
+                    >
+                      View Receipts
+                    </button>
+                  </div>
+                </div>
               )}
             </div>
           </div>
         </div>
+
+        {/* History Modal */}
+        {showHistory && (
+          <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[110] flex items-center justify-center p-4 animate-fade-in">
+            <div className="glass-card w-full max-w-2xl overflow-hidden animate-scale-up">
+              <div className="p-6 border-b border-border flex justify-between items-center bg-bg-primary/50">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-xl bg-accent/10 flex items-center justify-center text-accent">
+                    <FaHistory />
+                  </div>
+                  <div>
+                    <h3 className="text-xl font-bold">Notice History</h3>
+                    <p className="text-xs text-secondary">Browse previous announcements and read receipts</p>
+                  </div>
+                </div>
+                <button 
+                  onClick={() => setShowHistory(false)}
+                  className="w-10 h-10 rounded-xl bg-bg-secondary flex items-center justify-center hover:bg-red-50 hover:text-red-500 transition-all"
+                >
+                  <FaTimes />
+                </button>
+              </div>
+
+              <div className="p-6 max-h-[60vh] overflow-y-auto space-y-4">
+                {historyLoading ? (
+                  Array(3).fill(0).map((_, i) => <div key={i} className="h-24 w-full skeleton" />)
+                ) : historyNotices.length === 0 ? (
+                  <p className="text-center py-20 text-text-muted italic">No history found.</p>
+                ) : (
+                  historyNotices.map(notice => (
+                    <div key={notice.id} className="p-4 rounded-xl border border-border hover:border-accent/30 transition-all bg-bg-secondary/30">
+                      <div className="flex justify-between items-start mb-2">
+                        <h4 className="font-bold text-text-primary">{notice.title}</h4>
+                        <span className="text-[10px] text-text-muted font-bold">{new Date(notice.createdAt).toLocaleDateString()}</span>
+                      </div>
+                      <p className="text-xs text-secondary line-clamp-2 mb-3">{notice.content}</p>
+                      <div className="flex items-center justify-between pt-3 border-t border-border/50">
+                        <span className="text-[10px] font-bold text-accent uppercase">
+                          Batch: {batches.find(b => b.id === notice.batchId)?.name || "Unknown"}
+                        </span>
+                        <button 
+                          onClick={() => setSelectedNoticeId(notice.id)}
+                          className="text-[10px] font-bold text-accent hover:underline flex items-center gap-1"
+                        >
+                          <FaUsers size={12} /> {getReadCount(notice.id)} Receipts
+                        </button>
+                      </div>
+                    </div>
+                  ))
+                )}
+              </div>
+
+              <div className="p-4 bg-bg-secondary/50 border-t border-border flex items-center justify-between">
+                <p className="text-xs text-text-muted italic">Showing 2 notices per page</p>
+                <div className="flex gap-2">
+                  <button 
+                    disabled={true} 
+                    className="btn btn-secondary btn-sm h-9 px-4 gap-2 opacity-50 cursor-not-allowed"
+                  >
+                    <FaChevronLeft size={10} /> Previous
+                  </button>
+                  <button 
+                    onClick={() => fetchHistory(true)}
+                    disabled={!hasMore || historyLoading}
+                    className="btn btn-secondary btn-sm h-9 px-4 gap-2"
+                  >
+                    Next <FaChevronRight size={10} />
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Modal for Read Receipts */}
         {selectedNoticeId && (
