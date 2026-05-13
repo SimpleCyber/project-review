@@ -22,7 +22,7 @@ export default function AdminOverview() {
           getDocs(collection(db, "students")),
           getDocs(collection(db, "submissions")),
           getDocs(collection(db, "batches")),
-          getDocs(query(collection(db, "submissions"), orderBy("submittedAt", "desc"), limit(5)))
+          getDocs(query(collection(db, "submissions"), orderBy("updatedAt", "desc"), limit(5)))
         ]);
 
         setStats({
@@ -87,7 +87,12 @@ export default function AdminOverview() {
                       <FaFileUpload size={14} />
                     </div>
                     <div>
-                      <p className="text-sm font-semibold">Group {sub.groupId}</p>
+                      <div className="flex items-center gap-2">
+                        <p className="text-sm font-semibold">Group {sub.groupId}</p>
+                        {sub.resubmissionCount > 0 && (
+                          <span className="badge badge-amber text-[8px] px-1.5 py-0">Resubmission {sub.resubmissionCount}</span>
+                        )}
+                      </div>
                       <p className="text-xs text-text-muted">{batchList.find(b => b.id === sub.batchId)?.name || "Unknown Batch"}</p>
                     </div>
                   </div>

@@ -38,18 +38,25 @@ export interface Submission {
   studentId: string;       // Firebase Auth UID
   batchId: string;
   groupId: string;
-  githubUrl: string;
+  githubUrl?: string;
   websiteUrl?: string;
   screenshotUrls: string[];
   youtubeUrl?: string;
   researchPaperUrl?: string;
-  pptUrl?: string;
+  review1PptUrl?: string;
+  review2PptUrl?: string;
+  review3PptUrl?: string;
+  finalReviewPptUrl?: string;
   synopsisUrl?: string;
   sponsorshipLetterUrl?: string;
+  copyrightUrl?: string;
+  posterUrl?: string;
+  blackBookUrl?: string;
   customDocuments?: CustomDocument[];
   members?: ProjectMember[];
   reviewStatus?: ReviewStatus;
   reviewComment?: string;
+  resubmissionCount?: number;
   submittedAt: number;
   updatedAt: number;
 }

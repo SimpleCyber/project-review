@@ -7,7 +7,7 @@ import { Submission, Batch, Student, ReviewStatus } from "@/lib/types";
 import { useParams, useRouter } from "next/navigation";
 import { 
   FaArrowLeft, FaGithub, FaLink, FaFilePdf, FaYoutube, 
-  FaImage, FaUserFriends, FaEnvelope, FaIdCard, FaCheckCircle, FaClock, FaSearch, FaFilePowerpoint, FaFileAlt, FaFileContract, FaTag, FaTimes
+  FaImage, FaUserFriends, FaEnvelope, FaIdCard, FaCheckCircle, FaClock, FaSearch, FaFilePowerpoint, FaFileAlt, FaFileContract, FaTag, FaTimes, FaCopyright, FaFileImage, FaBook
 } from "react-icons/fa";
 
 const STATUS_CONFIG: Record<ReviewStatus, { label: string; icon: React.ReactNode; color: string; bg: string; border: string }> = {
@@ -125,13 +125,16 @@ export default function SubmissionDetail() {
 
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold mb-1">{student?.name || "Student Submission"}</h1>
-          <p className="text-secondary flex items-center gap-2">
-            <span className="badge badge-info text-sm">Group {submission.groupId}</span>
-            <span className="text-text-muted">•</span>
-            <span>{batch?.name}</span>
-          </p>
-        </div>
+            <h1 className="text-2xl font-bold mb-1">{student?.name || "Student Submission"}</h1>
+            <div className="flex items-center gap-2">
+              <span className="badge badge-info text-sm">Group {submission.groupId}</span>
+              {submission.resubmissionCount && submission.resubmissionCount > 0 ? (
+                <span className="badge badge-amber text-sm animate-pulse">Resubmission {submission.resubmissionCount}</span>
+              ) : null}
+              <span className="text-text-muted">•</span>
+              <span className="text-secondary">{batch?.name}</span>
+            </div>
+          </div>
         <div className="text-right flex flex-col md:items-end">
           <p className="text-xs text-text-muted uppercase font-bold tracking-widest mb-1">Submitted On</p>
           <p className="font-semibold">{new Date(submission.submittedAt).toLocaleDateString()}</p>
@@ -165,18 +168,39 @@ export default function SubmissionDetail() {
 
           {/* Structured Documents List */}
           <div className="glass-card p-4">
-            <h3 className="text-lg font-bold mb-3 flex items-center gap-2">
-              <FaFileAlt className="text-accent" /> Submitted Document Links
+            <h3 className="text-lg font-bold mb-4 flex items-center gap-2">
+              <FaFileAlt className="text-accent" /> Submitted Documents & Reviews
             </h3>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              {renderDocLink("Research Paper", submission.researchPaperUrl, <FaFilePdf size={16} />, "rose")}
-              {renderDocLink("PPT / Presentation", submission.pptUrl, <FaFilePowerpoint size={16} />, "orange")}
-              {renderDocLink("Synopsis", submission.synopsisUrl, <FaFileAlt size={16} />, "blue")}
-              {renderDocLink("Sponsorship Letter", submission.sponsorshipLetterUrl, <FaFileContract size={16} />, "purple")}
-              {submission.customDocuments?.map((cd, i) => renderDocLink(cd.label, cd.url, <FaTag size={16} />, "teal", i))}
+            
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-6">
+              {/* Left Side: Core Documents */}
+              <div className="space-y-3">
+                <p className="text-[10px] font-bold uppercase tracking-widest text-text-muted mb-2">Core Documents</p>
+                {renderDocLink("Research Paper", submission.researchPaperUrl, <FaFilePdf size={16} />, "rose")}
+                {renderDocLink("Synopsis", submission.synopsisUrl, <FaFileAlt size={16} />, "blue")}
+                {renderDocLink("Sponsorship Letter", submission.sponsorshipLetterUrl, <FaFileContract size={16} />, "purple")}
+                {renderDocLink("Copyright", submission.copyrightUrl, <FaCopyright size={16} />, "amber")}
+              </div>
+
+              {/* Right Side: PPTs */}
+              <div className="space-y-3">
+                <p className="text-[10px] font-bold uppercase tracking-widest text-text-muted mb-2">Review PPTs</p>
+                {renderDocLink("Review 1 PPT", submission.review1PptUrl, <FaFilePowerpoint size={16} />, "orange")}
+                {renderDocLink("Review 2 PPT", submission.review2PptUrl, <FaFilePowerpoint size={16} />, "orange")}
+                {renderDocLink("Review 3 PPT", submission.review3PptUrl, <FaFilePowerpoint size={16} />, "orange")}
+                {renderDocLink("Final Review PPT", submission.finalReviewPptUrl, <FaFilePowerpoint size={16} />, "rose")}
+              </div>
             </div>
 
-            {!submission.researchPaperUrl && !submission.pptUrl && !submission.synopsisUrl && !submission.sponsorshipLetterUrl && (!submission.customDocuments || submission.customDocuments.length === 0) && (
+            <div className="mt-6 pt-4 border-t border-border">
+              <p className="text-[10px] font-bold uppercase tracking-widest text-text-muted mb-2">Visuals & Final Book</p>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                {renderDocLink("Project Poster", submission.posterUrl, <FaFileImage size={16} />, "emerald")}
+                {renderDocLink("Black Book", submission.blackBookUrl, <FaBook size={16} />, "zinc")}
+              </div>
+            </div>
+
+            {!submission.researchPaperUrl && !submission.review1PptUrl && !submission.review2PptUrl && !submission.review3PptUrl && !submission.finalReviewPptUrl && !submission.synopsisUrl && !submission.sponsorshipLetterUrl && !submission.copyrightUrl && !submission.posterUrl && !submission.blackBookUrl && (
               <p className="text-sm font-semibold text-gray-400 italic bg-gray-50 border-2 border-dashed border-gray-200 rounded-xl p-8 text-center">No documents uploaded.</p>
             )}
           </div>
@@ -250,6 +274,18 @@ export default function SubmissionDetail() {
             <div className={`inline-flex items-center gap-2 px-4 py-2 rounded-full text-sm font-bold ${statusInfo.bg} ${statusInfo.color} border mb-4`}>
               {statusInfo.icon} {statusInfo.label}
             </div>
+
+            {submission.resubmissionCount && submission.resubmissionCount > 0 && currentStatus === "pending_review" && (
+              <div className="mb-4 p-3 bg-amber-50 border border-amber-200 rounded-xl flex items-center gap-3">
+                <div className="w-8 h-8 rounded-lg bg-amber-100 flex items-center justify-center text-amber-600 shrink-0">
+                  <FaSearch size={14} />
+                </div>
+                <div>
+                  <p className="text-xs font-bold text-amber-800">Review Again</p>
+                  <p className="text-[10px] text-amber-600">The student has re-uploaded files for review.</p>
+                </div>
+              </div>
+            )}
 
             {submission.reviewComment && (
               <div className="mb-6 p-4 bg-emerald-50 border border-emerald-200 rounded-xl">

@@ -194,15 +194,7 @@ export default function StudentDashboard() {
 
         <div className="stat-card !p-5 group transition-all hover:border-accent/40">
           <div className="flex justify-between items-center mb-3">
-            <h2 className="text-base font-semibold">User Details</h2>
-            {!isEditingProfile && (
-              <button 
-                onClick={handleStartEdit}
-                className="btn btn-secondary btn-xs gap-1.5 opacity-0 group-hover:opacity-100 transition-opacity"
-              >
-                <FaEdit size={12} /> Edit
-              </button>
-            )}
+            <h2 className="text-base font-semibold py-5">User Details</h2>
           </div>
           
           {isEditingProfile ? (

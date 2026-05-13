@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { FaTimes, FaGithub, FaLink, FaYoutube, FaFilePdf, FaImage, FaUserFriends, FaUserGraduate, FaIdCard, FaEnvelope, FaExpand, FaFilePowerpoint, FaFileAlt, FaFileContract, FaTag, FaCheckCircle, FaClock, FaSearch } from "react-icons/fa";
+import { FaTimes, FaGithub, FaLink, FaYoutube, FaFilePdf, FaImage, FaUserFriends, FaUserGraduate, FaIdCard, FaEnvelope, FaExpand, FaFilePowerpoint, FaFileAlt, FaFileContract, FaTag, FaCheckCircle, FaClock, FaSearch, FaCopyright, FaFileImage, FaBook } from "react-icons/fa";
 import Link from "next/link";
 import { Submission, Student, Batch, ReviewStatus } from "@/lib/types";
 import { useAuth } from "@/lib/AuthContext";
@@ -82,7 +82,14 @@ export default function SubmissionSidebar({ isOpen, onClose, submission, student
         <div className="flex items-center justify-between p-6 border-b border-gray-100 bg-white">
           <div>
             <h2 className="text-xl font-extrabold text-gray-900">Project Review</h2>
-            {student && <p className="text-sm font-semibold text-gray-500">{student.name} • {batch?.name} • Group {submission.groupId}</p>}
+            {student && (
+              <div className="flex items-center gap-2 mt-0.5">
+                <p className="text-sm font-semibold text-gray-500">{student.name} • {batch?.name} • Group {submission.groupId}</p>
+                {submission.resubmissionCount && submission.resubmissionCount > 0 && (
+                  <span className="badge badge-amber text-[10px] px-2 py-0 animate-pulse">Resubmission {submission.resubmissionCount}</span>
+                )}
+              </div>
+            )}
           </div>
           <div className="flex items-center gap-3">
             <Link href={`/admin/submissions/${submission.id}`} className="flex items-center gap-2 px-4 py-2 bg-gray-50 rounded-full text-xs font-bold hover:bg-emerald-50"><FaExpand /> Expand</Link>
@@ -156,10 +163,15 @@ export default function SubmissionSidebar({ isOpen, onClose, submission, student
               <h3 className="text-lg font-extrabold mb-5 flex items-center gap-2"><FaFileAlt className="text-accent" /> Documents</h3>
               <div className="grid grid-cols-2 gap-4">
                 {renderDocLink("Research Paper", submission.researchPaperUrl, <FaFilePdf size={22} />, "rose")}
-                {renderDocLink("PPT", submission.pptUrl, <FaFilePowerpoint size={22} />, "orange")}
                 {renderDocLink("Synopsis", submission.synopsisUrl, <FaFileAlt size={22} />, "blue")}
                 {renderDocLink("Sponsorship", submission.sponsorshipLetterUrl, <FaFileContract size={22} />, "purple")}
-                {submission.customDocuments?.map((cd, i) => renderDocLink(cd.label, cd.url, <FaTag size={22} />, "teal", i))}
+                {renderDocLink("Copyright", submission.copyrightUrl, <FaCopyright size={22} />, "amber")}
+                {renderDocLink("Review 1 PPT", submission.review1PptUrl, <FaFilePowerpoint size={22} />, "orange")}
+                {renderDocLink("Review 2 PPT", submission.review2PptUrl, <FaFilePowerpoint size={22} />, "orange")}
+                {renderDocLink("Review 3 PPT", submission.review3PptUrl, <FaFilePowerpoint size={22} />, "orange")}
+                {renderDocLink("Final PPT", submission.finalReviewPptUrl, <FaFilePowerpoint size={22} />, "rose")}
+                {renderDocLink("Poster", submission.posterUrl, <FaFileImage size={22} />, "emerald")}
+                {renderDocLink("Black Book", submission.blackBookUrl, <FaBook size={22} />, "zinc")}
               </div>
             </div>
 

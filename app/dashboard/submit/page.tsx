@@ -11,7 +11,7 @@ import { useRouter } from "next/navigation";
 import { 
   FaGithub, FaLink, FaYoutube, FaCloudUploadAlt, FaFilePdf, 
   FaTimes, FaImage, FaCheckCircle, FaExclamationTriangle, FaTrash,
-  FaFileAlt, FaFilePowerpoint, FaFileContract, FaTag
+  FaFileAlt, FaFilePowerpoint, FaFileContract, FaTag, FaCopyright, FaFileImage, FaBook
 } from "react-icons/fa";
 import ConfirmationModal from "@/components/ConfirmationModal";
 
@@ -31,17 +31,24 @@ export default function SubmissionPage() {
   const [youtubeUrl, setYoutubeUrl] = useState("");
   const [screenshots, setScreenshots] = useState<string[]>([]);
   const [paperUrl, setPaperUrl] = useState("");
-  const [pptUrl, setPptUrl] = useState("");
+  const [review1PptUrl, setReview1PptUrl] = useState("");
+  const [review2PptUrl, setReview2PptUrl] = useState("");
+  const [review3PptUrl, setReview3PptUrl] = useState("");
+  const [finalReviewPptUrl, setFinalReviewPptUrl] = useState("");
   const [synopsisUrl, setSynopsisUrl] = useState("");
   const [sponsorshipLetterUrl, setSponsorshipLetterUrl] = useState("");
-  const [customDocuments, setCustomDocuments] = useState<CustomDocument[]>([]);
+  const [copyrightUrl, setCopyrightUrl] = useState("");
+  const [posterUrl, setPosterUrl] = useState("");
+  const [blackBookUrl, setBlackBookUrl] = useState("");
   
   // Uploading state
   const [uploading, setUploading] = useState<string | null>(null);
 
   // Deletion State
-  const [deleteType, setDeleteType] = useState<"screenshot" | "paper" | "ppt" | "synopsis" | "sponsorship" | "custom" | null>(null);
+  const [deleteType, setDeleteType] = useState<"screenshot" | "paper" | "review1Ppt" | "review2Ppt" | "review3Ppt" | "finalReviewPpt" | "synopsis" | "sponsorship" | "copyright" | "poster" | "blackBook" | null>(null);
   const [indexToDelete, setIndexToDelete] = useState<number | null>(null);
+  const [expandedImage, setExpandedImage] = useState<string | null>(null);
+  const [showAllScreenshots, setShowAllScreenshots] = useState(false);
 
   useEffect(() => {
     async function fetchData() {
@@ -57,15 +64,20 @@ export default function SubmissionPage() {
         if (!subSnap.empty) {
           const data = { id: subSnap.docs[0].id, ...subSnap.docs[0].data() } as Submission;
           setSubmission(data);
-          setGithubUrl(data.githubUrl);
+          setGithubUrl(data.githubUrl || "");
           setWebsiteUrl(data.websiteUrl || "");
           setYoutubeUrl(data.youtubeUrl || "");
           setScreenshots(data.screenshotUrls);
           setPaperUrl(data.researchPaperUrl || "");
-          setPptUrl(data.pptUrl || "");
+          setReview1PptUrl(data.review1PptUrl || "");
+          setReview2PptUrl(data.review2PptUrl || "");
+          setReview3PptUrl(data.review3PptUrl || "");
+          setFinalReviewPptUrl(data.finalReviewPptUrl || "");
           setSynopsisUrl(data.synopsisUrl || "");
           setSponsorshipLetterUrl(data.sponsorshipLetterUrl || "");
-          setCustomDocuments(data.customDocuments || []);
+          setCopyrightUrl(data.copyrightUrl || "");
+          setPosterUrl(data.posterUrl || "");
+          setBlackBookUrl(data.blackBookUrl || "");
         }
 
         const batchDoc = await getDoc(doc(db, "batches", studentData.batchId));
@@ -115,44 +127,29 @@ export default function SubmissionPage() {
     setDeleteType("screenshot");
   };
 
-  const addCustomDocument = () => {
-    setCustomDocuments(prev => [...prev, { label: "", url: "" }]);
-  };
-
-  const updateCustomDocLabel = (index: number, label: string) => {
-    setCustomDocuments(prev => {
-      const updated = [...prev];
-      updated[index] = { ...updated[index], label };
-      return updated;
-    });
-  };
-
-  const updateCustomDocUrl = (index: number, url: string) => {
-    setCustomDocuments(prev => {
-      const updated = [...prev];
-      updated[index] = { ...updated[index], url };
-      return updated;
-    });
-  };
-
-  const removeCustomDocument = (index: number) => {
-    setIndexToDelete(index);
-    setDeleteType("custom");
-  };
-
   const confirmDelete = () => {
     if (deleteType === "screenshot" && indexToDelete !== null) {
       setScreenshots(prev => prev.filter((_, i) => i !== indexToDelete));
     } else if (deleteType === "paper") {
       setPaperUrl("");
-    } else if (deleteType === "ppt") {
-      setPptUrl("");
+    } else if (deleteType === "review1Ppt") {
+      setReview1PptUrl("");
+    } else if (deleteType === "review2Ppt") {
+      setReview2PptUrl("");
+    } else if (deleteType === "review3Ppt") {
+      setReview3PptUrl("");
+    } else if (deleteType === "finalReviewPpt") {
+      setFinalReviewPptUrl("");
     } else if (deleteType === "synopsis") {
       setSynopsisUrl("");
     } else if (deleteType === "sponsorship") {
       setSponsorshipLetterUrl("");
-    } else if (deleteType === "custom" && indexToDelete !== null) {
-      setCustomDocuments(prev => prev.filter((_, i) => i !== indexToDelete));
+    } else if (deleteType === "copyright") {
+      setCopyrightUrl("");
+    } else if (deleteType === "poster") {
+      setPosterUrl("");
+    } else if (deleteType === "blackBook") {
+      setBlackBookUrl("");
     }
     setDeleteType(null);
     setIndexToDelete(null);
@@ -166,7 +163,7 @@ export default function SubmissionPage() {
     setSuccess("");
     setSaving(true);
 
-    if (!githubUrl.includes("github.com")) {
+    if (githubUrl && !githubUrl.includes("github.com")) {
       setSaving(false);
       return setError("Please provide a valid GitHub repository URL.");
     }
@@ -177,6 +174,17 @@ export default function SubmissionPage() {
     }
 
     try {
+      let newResubmissionCount = submission?.resubmissionCount || 0;
+      let newStatus = submission?.reviewStatus || "pending_review";
+      let newComment = submission?.reviewComment || "";
+
+      // If it was already reviewed, mark it for "Review Again" and increment count
+      if (submission?.reviewStatus === "review_done") {
+        newResubmissionCount += 1;
+        newStatus = "pending_review";
+        newComment = ""; // Clear old comment for the new version
+      }
+
       const submissionData = {
         studentId: studentData!.id,
         batchId: studentData!.batchId,
@@ -186,10 +194,18 @@ export default function SubmissionPage() {
         youtubeUrl,
         screenshotUrls: screenshots,
         researchPaperUrl: paperUrl,
-        pptUrl,
+        review1PptUrl,
+        review2PptUrl,
+        review3PptUrl,
+        finalReviewPptUrl,
         synopsisUrl,
         sponsorshipLetterUrl,
-        customDocuments: customDocuments.filter(d => d.label && d.url),
+        copyrightUrl,
+        posterUrl,
+        blackBookUrl,
+        reviewStatus: newStatus,
+        reviewComment: newComment,
+        resubmissionCount: newResubmissionCount,
         updatedAt: Date.now(),
       };
 
@@ -271,7 +287,7 @@ export default function SubmissionPage() {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div>
               <label className="flex items-center gap-1.5 mb-1.5 text-[0.85rem] font-medium text-text-primary" htmlFor="github">
-                <FaGithub className="text-emerald" size={14} /> GitHub URL <span className="text-rose-500">*</span>
+                <FaGithub className="text-emerald" size={14} /> GitHub URL (Optional)
               </label>
               <div className="relative mt-1">
                 <input
@@ -282,7 +298,6 @@ export default function SubmissionPage() {
                   value={githubUrl}
                   onChange={(e) => setGithubUrl(e.target.value)}
                   disabled={isLocked}
-                  required
                 />
               </div>
             </div>
@@ -325,139 +340,190 @@ export default function SubmissionPage() {
 
         {/* Screenshots Section */}
         <div className="glass-card p-4 space-y-4">
-          <h2 className="text-xl font-bold flex items-center gap-2">
-            <FaImage className="text-emerald-400" /> Screenshots <span className="text-rose-500 text-sm">*</span>
-          </h2>
-          
-          <div className="grid grid-cols-3 gap-3">
-            {screenshots.map((url, i) => (
-              <div key={i} className="relative aspect-square rounded-lg border border-border bg-bg-primary overflow-hidden group">
-                <img src={url} alt="Screenshot" className="w-full h-full object-cover" />
-                {!isLocked && (
-                  <button 
-                    onClick={() => removeScreenshot(i)}
-                    className="absolute inset-0 bg-rose-500/80 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
-                  >
-                    <FaTrash className="text-white" />
-                  </button>
-                )}
-              </div>
-            ))}
-            
-            {!isLocked && screenshots.length < 6 && (
-              <label className="aspect-square rounded-lg border-2 border-dashed border-border hover:border-accent flex flex-col items-center justify-center cursor-pointer transition-all hover:bg-accent-light">
-                <input 
-                  type="file" 
-                  className="hidden" 
-                  accept="image/*"
-                  multiple
-                  onChange={(e) => {
-                    if (e.target.files && e.target.files.length > 0) {
-                      handleMultipleImageUploads(Array.from(e.target.files));
-                    }
-                  }}
-                  disabled={uploading === "screenshot"}
-                />
-                {uploading === "screenshot" ? <div className="spinner" /> : <><FaPlusIcon className="text-text-muted mb-1" /><span className="text-[10px] text-text-muted font-bold uppercase">Add</span></>}
-              </label>
-            )}
-          </div>
-          <p className="text-xs text-text-muted italic">Upload up to 6 screenshots of your project UI/Hardware.</p>
-        </div>
-
-        {/* Documents Section */}
-        <div className="glass-card p-4 space-y-4">
-          <h2 className="text-xl font-bold flex items-center gap-2 mb-2">
-            <FaFileAlt className="text-accent" /> Document Links
-          </h2>
-          <p className="text-xs text-text-muted mb-4">Provide public links (e.g. Google Drive, Google Docs) for your project documents.</p>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {renderDocInput(
-              "Research Paper Link",
-              <FaFilePdf className="text-rose-400" size={14} />,
-              paperUrl,
-              setPaperUrl,
-              "https://docs.google.com/..."
-            )}
-            {renderDocInput(
-              "PPT / Presentation Link",
-              <FaFilePowerpoint className="text-orange-400" size={14} />,
-              pptUrl,
-              setPptUrl,
-              "https://docs.google.com/presentation/..."
-            )}
-            {renderDocInput(
-              "Synopsis Link",
-              <FaFileAlt className="text-blue-400" size={14} />,
-              synopsisUrl,
-              setSynopsisUrl,
-              "https://docs.google.com/..."
-            )}
-            {renderDocInput(
-              "Sponsorship Letter Link",
-              <FaFileContract className="text-purple-400" size={14} />,
-              sponsorshipLetterUrl,
-              setSponsorshipLetterUrl,
-              "https://drive.google.com/..."
-            )}
-          </div>
-        </div>
-
-        {/* Custom Documents Section */}
-        <div className="glass-card p-4 space-y-4">
-          <div className="flex items-center justify-between">
+          <div className="flex items-center justify-between mb-3">
             <h2 className="text-xl font-bold flex items-center gap-2">
-              <FaTag className="text-teal-400" /> Additional Links
+              <FaImage className="text-blue-500" /> Project Screenshots <span className="text-rose-500 text-sm">*</span>
             </h2>
-            {!isLocked && (
-              <button 
-                type="button" 
-                onClick={addCustomDocument}
-                className="btn btn-secondary btn-sm gap-2"
-              >
-                <FaPlusIcon className="text-accent" /> Add Link
-              </button>
-            )}
-          </div>
-
-          {customDocuments.length === 0 ? (
-            <p className="text-sm text-text-muted italic text-center py-6">
-              No additional links added. Click "Add Link" to provide more resources.
-            </p>
-          ) : (
-            <div className="space-y-4">
-              {customDocuments.map((cd, i) => (
-                <div key={i} className="p-4 border border-border rounded-xl bg-bg-primary flex flex-col md:flex-row gap-3">
-                  <input
-                    type="text"
-                    placeholder="Label (e.g. Certificate, NOC)"
-                    className="input input-sm md:w-1/3"
-                    value={cd.label}
-                    onChange={(e) => updateCustomDocLabel(i, e.target.value)}
-                    disabled={isLocked}
+            <div className="flex items-center gap-4">
+              {!isLocked && screenshots.length < 6 && (
+                <label className="flex items-center gap-2 px-3 py-1.5 rounded-lg border border-emerald-200 bg-emerald-50 text-emerald-600 text-xs font-bold cursor-pointer hover:bg-emerald-100 transition-all">
+                  <input 
+                    type="file" 
+                    className="hidden" 
+                    accept="image/*"
+                    multiple
+                    onChange={(e) => {
+                      if (e.target.files && e.target.files.length > 0) {
+                        handleMultipleImageUploads(Array.from(e.target.files));
+                      }
+                    }}
+                    disabled={uploading === "screenshot"}
                   />
-                  <input
-                    type="url"
-                    placeholder="URL (e.g. https://drive.google.com/...)"
-                    className="input input-sm flex-1"
-                    value={cd.url}
-                    onChange={(e) => updateCustomDocUrl(i, e.target.value)}
-                    disabled={isLocked}
+                  {uploading === "screenshot" ? <div className="spinner-sm" /> : <FaPlusIcon />}
+                  {uploading === "screenshot" ? "Uploading..." : "Add Screenshots"}
+                </label>
+              )}
+              {screenshots.length > 2 && (
+                <button 
+                  type="button"
+                  onClick={() => setShowAllScreenshots(!showAllScreenshots)}
+                  className="text-xs font-bold text-accent hover:underline uppercase tracking-wider"
+                >
+                  {showAllScreenshots ? "Show Less" : `View All ${screenshots.length}`}
+                </button>
+              )}
+            </div>
+          </div>
+          
+          {screenshots.length === 0 ? (
+            <div className="border-2 border-dashed border-border rounded-2xl p-12 flex flex-col items-center justify-center text-center bg-bg-primary/50">
+              <div className="w-16 h-16 rounded-full bg-emerald-50 flex items-center justify-center text-emerald-400 mb-4">
+                <FaImage size={32} />
+              </div>
+              <h3 className="text-lg font-bold mb-1">No screenshots yet</h3>
+              <p className="text-sm text-text-muted mb-6 max-w-xs">Upload up to 6 screenshots to showcase your project UI or hardware setup.</p>
+              {!isLocked && (
+                <label className="btn btn-primary gap-2 cursor-pointer">
+                   <input 
+                    type="file" 
+                    className="hidden" 
+                    accept="image/*"
+                    multiple
+                    onChange={(e) => {
+                      if (e.target.files && e.target.files.length > 0) {
+                        handleMultipleImageUploads(Array.from(e.target.files));
+                      }
+                    }}
+                    disabled={uploading === "screenshot"}
+                  />
+                  <FaCloudUploadAlt size={16} /> Select Images
+                </label>
+              )}
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              {(showAllScreenshots ? screenshots : screenshots.slice(0, 2)).map((url, i) => (
+                <div key={i} className="relative rounded-xl overflow-hidden border border-border shadow-md group bg-bg-primary">
+                  <img 
+                    src={url} 
+                    alt={`Screenshot ${i+1}`} 
+                    className="w-full h-auto cursor-pointer hover:scale-105 transition-transform duration-500" 
+                    onClick={() => setExpandedImage(url)}
                   />
                   {!isLocked && (
-                    <button
+                    <button 
                       type="button"
-                      onClick={() => removeCustomDocument(i)}
-                      className="text-text-muted hover:text-rose-500 p-2 flex-shrink-0"
+                      onClick={() => removeScreenshot(i)}
+                      className="absolute top-2 right-2 w-8 h-8 rounded-full bg-rose-500 text-white flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity shadow-lg z-10 hover:bg-rose-600"
                     >
-                      <FaTrash size={14} />
+                      <FaTrash size={12} />
                     </button>
                   )}
+                  <div className="absolute bottom-0 left-0 right-0 p-2 bg-gradient-to-t from-black/60 to-transparent opacity-0 group-hover:opacity-100 transition-opacity">
+                    <p className="text-[10px] text-white font-bold uppercase">Screenshot {i+1}</p>
+                  </div>
                 </div>
               ))}
             </div>
           )}
         </div>
+
+        {/* Documents Section */}
+        <div className="glass-card p-4 space-y-4">
+          <h2 className="text-xl font-bold flex items-center gap-2 mb-2">
+            <FaFileAlt className="text-accent" /> Project Documents & Presentations
+          </h2>
+          <p className="text-xs text-text-muted mb-4">Provide public links (e.g. Google Drive, Google Docs) for your project documents and reviews.</p>
+          
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-6">
+            {/* Left Side Documents */}
+            <div className="space-y-6">
+              <h3 className="text-sm font-bold uppercase tracking-wider text-text-muted border-b border-border pb-2">Core Documents</h3>
+              {renderDocInput(
+                "Research Paper Link",
+                <FaFilePdf className="text-rose-400" size={14} />,
+                paperUrl,
+                setPaperUrl,
+                "https://docs.google.com/..."
+              )}
+              {renderDocInput(
+                "Synopsis Link",
+                <FaFileAlt className="text-blue-400" size={14} />,
+                synopsisUrl,
+                setSynopsisUrl,
+                "https://docs.google.com/..."
+              )}
+              {renderDocInput(
+                "Sponsorship Letter Link",
+                <FaFileContract className="text-purple-400" size={14} />,
+                sponsorshipLetterUrl,
+                setSponsorshipLetterUrl,
+                "https://drive.google.com/..."
+              )}
+              {renderDocInput(
+                "Copyright Link",
+                <FaCopyright className="text-amber-400" size={14} />,
+                copyrightUrl,
+                setCopyrightUrl,
+                "https://drive.google.com/..."
+              )}
+            </div>
+
+            {/* Right Side PPTs */}
+            <div className="space-y-6">
+              <h3 className="text-sm font-bold uppercase tracking-wider text-text-muted border-b border-border pb-2">Review Presentations (PPT)</h3>
+              {renderDocInput(
+                "Review 1 PPT",
+                <FaFilePowerpoint className="text-orange-400" size={14} />,
+                review1PptUrl,
+                setReview1PptUrl,
+                "https://docs.google.com/presentation/..."
+              )}
+              {renderDocInput(
+                "Review 2 PPT",
+                <FaFilePowerpoint className="text-orange-500" size={14} />,
+                review2PptUrl,
+                setReview2PptUrl,
+                "https://docs.google.com/presentation/..."
+              )}
+              {renderDocInput(
+                "Review 3 PPT",
+                <FaFilePowerpoint className="text-orange-600" size={14} />,
+                review3PptUrl,
+                setReview3PptUrl,
+                "https://docs.google.com/presentation/..."
+              )}
+              {renderDocInput(
+                "Final Review PPT",
+                <FaFilePowerpoint className="text-rose-500" size={14} />,
+                finalReviewPptUrl,
+                setFinalReviewPptUrl,
+                "https://docs.google.com/presentation/..."
+              )}
+            </div>
+          </div>
+
+          <div className="mt-8 pt-6 border-t border-border">
+            <h3 className="text-sm font-bold uppercase tracking-wider text-text-muted mb-4">Final Submission Visuals</h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {renderDocInput(
+                "Poster Link",
+                <FaFileImage className="text-emerald-400" size={14} />,
+                posterUrl,
+                setPosterUrl,
+                "https://drive.google.com/..."
+              )}
+              {renderDocInput(
+                "Black Book Link",
+                <FaBook className="text-zinc-600" size={14} />,
+                blackBookUrl,
+                setBlackBookUrl,
+                "https://drive.google.com/..."
+              )}
+            </div>
+          </div>
+        </div>
+
 
         {!isLocked && (
           <div className="flex justify-end gap-4 pt-6 border-t border-border">
@@ -481,14 +547,27 @@ export default function SubmissionPage() {
 
       <ConfirmationModal
         isOpen={deleteType !== null}
-        title={`Remove ${deleteType === "screenshot" ? "Screenshot" : deleteType === "paper" ? "Research Paper" : deleteType === "ppt" ? "PPT" : deleteType === "synopsis" ? "Synopsis" : deleteType === "sponsorship" ? "Sponsorship Letter" : "Document"}?`}
-        message={`Are you sure you want to remove this document? This cannot be undone.`}
+        title={`Remove ${deleteType === "screenshot" ? "Screenshot" : deleteType === "paper" ? "Research Paper" : deleteType?.includes("Ppt") ? "Presentation" : deleteType === "synopsis" ? "Synopsis" : deleteType === "sponsorship" ? "Sponsorship Letter" : deleteType === "copyright" ? "Copyright" : deleteType === "poster" ? "Poster" : deleteType === "blackBook" ? "Black Book" : "Document"}?`}
+        message={`Are you sure you want to remove this? This action cannot be undone.`}
         onConfirm={confirmDelete}
         onCancel={() => {
           setDeleteType(null);
           setIndexToDelete(null);
         }}
       />
+
+      {expandedImage && (
+        <div 
+          className="fixed inset-0 z-[100] bg-black/80 flex items-center justify-center p-4 cursor-zoom-out animate-fade-in backdrop-blur-sm"
+          onClick={() => setExpandedImage(null)}
+        >
+          <img 
+            src={expandedImage} 
+            alt="Expanded Screenshot" 
+            className="max-w-full max-h-full object-contain rounded-2xl shadow-2xl" 
+          />
+        </div>
+      )}
     </div>
   );
 }
