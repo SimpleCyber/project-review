@@ -6,7 +6,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { 
   FaChartPie, FaLayerGroup, FaThList, FaSignOutAlt, 
-  FaUserTie, FaBars, FaTimes, FaGraduationCap, FaBell 
+  FaUserTie, FaBars, FaTimes, FaGraduationCap, FaBullhorn
 } from "react-icons/fa";
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
@@ -45,7 +45,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     { name: "Overview", icon: FaChartPie, href: "/admin" },
     { name: "Manage Batches", icon: FaLayerGroup, href: "/admin/batches" },
     { name: "All Submissions", icon: FaThList, href: "/admin/submissions" },
-    { name: "Manage Notices", icon: FaBell, href: "/admin/notices" },
+    { name: "Create Notices", icon: FaBullhorn, href: "/admin/notices" },
   ];
 
   return (
