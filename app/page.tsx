@@ -1,9 +1,30 @@
 "use client";
 
 import Link from "next/link";
-import { FaGraduationCap, FaUserTie, FaCheckCircle, FaCode, FaCloudUploadAlt, FaLock } from "react-icons/fa";
+import { FaGraduationCap, FaUserTie, FaCheckCircle, FaCode, FaCloudUploadAlt, FaLock, FaGithub, FaStar, FaCodeBranch } from "react-icons/fa";
+import { useState, useEffect } from "react";
 
 export default function LandingPage() {
+  const [repoStats, setRepoStats] = useState({ stars: 0, forks: 0 });
+
+  useEffect(() => {
+    const fetchRepoStats = async () => {
+      try {
+        const res = await fetch("https://api.github.com/repos/SimpleCyber/project-review");
+        const data = await res.json();
+        if (data.stargazers_count !== undefined) {
+          setRepoStats({
+            stars: data.stargazers_count,
+            forks: data.forks_count
+          });
+        }
+      } catch (err) {
+        console.error("Error fetching repo stats:", err);
+      }
+    };
+    fetchRepoStats();
+  }, []);
+
   return (
     <div className="flex flex-col min-h-screen gradient-bg">
       {/* Navigation */}
@@ -14,13 +35,36 @@ export default function LandingPage() {
           </div>
           <span className="text-xl font-bold tracking-tight">ProjectReview</span>
         </div>
-        <div className="flex gap-4">
-          <Link href="/login" className="btn btn-secondary btn-sm">
-            Student Login
-          </Link>
-          <Link href="/admin/login" className="btn btn-primary btn-sm">
-            Admin Portal
-          </Link>
+        <div className="hidden md:flex items-center gap-6">
+          <a 
+            href="https://github.com/SimpleCyber/project-review.git" 
+            target="_blank" 
+            className="flex items-center gap-4 p-2 px-4 rounded-2xl bg-bg-primary/50 border border-border hover:border-accent/40 hover:shadow-lg hover:shadow-accent/5 transition-all group"
+          >
+            <div className="w-10 h-10 rounded-xl bg-white flex items-center justify-center text-text-primary shadow-sm border border-border group-hover:scale-110 transition-transform">
+              <FaGithub size={20} />
+            </div>
+            <div>
+              <p className="text-[10px] font-bold uppercase text-accent leading-none mb-1">Open Source</p>
+              <div className="flex items-center gap-3">
+                <span className="flex items-center gap-1 text-[11px] font-bold text-text-primary">
+                  <FaStar className="text-amber-500" size={10} /> {repoStats.stars}
+                </span>
+                <span className="flex items-center gap-1 text-[11px] font-bold text-text-primary">
+                  <FaCodeBranch className="text-indigo-500" size={10} /> {repoStats.forks}
+                </span>
+              </div>
+            </div>
+          </a>
+          <div className="h-6 w-[1px] bg-border" />
+          <div className="flex gap-4">
+            <Link href="/login" className="btn btn-secondary btn-sm">
+              Student Login
+            </Link>
+            <Link href="/admin/login" className="btn btn-primary btn-sm">
+              Admin Portal
+            </Link>
+          </div>
         </div>
       </nav>
 
