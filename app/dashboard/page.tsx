@@ -5,10 +5,11 @@ import { useState, useEffect } from "react";
 import { db } from "@/lib/firebase";
 import { doc, getDoc, collection, query, where, getDocs, limit, orderBy } from "firebase/firestore";
 import { Batch, Submission } from "@/lib/types";
-import { FaFileUpload, FaCheckCircle, FaExclamationTriangle, FaGithub, FaLink, FaFilePdf, FaYoutube, FaUser, FaEdit, FaSave, FaTimes } from "react-icons/fa";
+import { FaFileUpload, FaCheckCircle, FaExclamationTriangle, FaGithub, FaLink, FaFilePdf, FaYoutube, FaUser, FaEdit, FaSave, FaTimes, FaBell, FaCheck } from "react-icons/fa";
 import Link from "next/link";
-import { updateDoc } from "firebase/firestore";
+import { updateDoc, setDoc } from "firebase/firestore";
 import SubmissionSidebar from "@/components/SubmissionSidebar";
+import { Notice, NoticeReadReceipt } from "@/lib/types";
 
 export default function StudentDashboard() {
   const { studentData, setStudentData } = useAuth();
@@ -17,6 +18,8 @@ export default function StudentDashboard() {
   const [batches, setBatches] = useState<Batch[]>([]);
   const [loading, setLoading] = useState(true);
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [notices, setNotices] = useState<Notice[]>([]);
+  const [readReceipts, setReadReceipts] = useState<string[]>([]);
   
   // Profile Edit State
   const [isEditingProfile, setIsEditingProfile] = useState(false);
@@ -49,6 +52,15 @@ export default function StudentDashboard() {
         const allBatchesSnap = await getDocs(query(collection(db, "batches"), orderBy("year", "desc")));
         const allBatches = allBatchesSnap.docs.map(doc => ({ id: doc.id, ...doc.data() } as Batch));
         setBatches(allBatches);
+
+        // Fetch Notices
+        const noticeSnap = await getDocs(query(collection(db, "notices"), where("batchId", "==", studentData.batchId), orderBy("createdAt", "desc")));
+        const noticeData = noticeSnap.docs.map(doc => ({ id: doc.id, ...doc.data() } as Notice));
+        setNotices(noticeData);
+
+        // Fetch Read Receipts for this group
+        const receiptSnap = await getDocs(query(collection(db, "notice_receipts"), where("batchId", "==", studentData.batchId), where("groupId", "==", studentData.groupId)));
+        setReadReceipts(receiptSnap.docs.map(doc => doc.data().noticeId));
       } catch (err) {
         console.error("Error fetching student dashboard data:", err);
       } finally {
@@ -117,6 +129,23 @@ export default function StudentDashboard() {
     }
   };
 
+  const handleAcknowledgeNotice = async (noticeId: string) => {
+    if (!studentData) return;
+    const receiptId = `${noticeId}_${studentData.groupId}`;
+    try {
+      await setDoc(doc(db, "notice_receipts", receiptId), {
+        id: receiptId,
+        noticeId,
+        groupId: studentData.groupId,
+        batchId: studentData.batchId,
+        readAt: Date.now()
+      });
+      setReadReceipts(prev => [...prev, noticeId]);
+    } catch (err) {
+      console.error("Error acknowledging notice:", err);
+    }
+  };
+
   if (loading) return <div className="space-y-6"><div className="h-40 w-full skeleton" /><div className="h-60 w-full skeleton" /></div>;
 
   return (
@@ -162,7 +191,7 @@ export default function StudentDashboard() {
                     submission.reviewStatus === 'review_done' ? 'bg-emerald-100 text-emerald-700' : 
                     submission.reviewStatus === 'under_review' ? 'bg-blue-100 text-blue-700' : 'bg-amber-100 text-amber-700'
                   }`}>
-                    {submission.reviewStatus === 'review_done' ? 'Review Done' : 
+                    {submission.reviewStatus === 'review_done' ? 'Accepted' : 
                      submission.reviewStatus === 'under_review' ? 'Under Review' : 'Pending Review'}
                   </span>
                 </div>
@@ -191,6 +220,7 @@ export default function StudentDashboard() {
             </div>
           )}
         </div>
+
 
         <div className="stat-card !p-5 group transition-all hover:border-accent/40">
           <div className="flex justify-between items-center mb-3">
@@ -271,6 +301,52 @@ export default function StudentDashboard() {
           )}
         </div>
       </div>
+
+      {/* Notices Section (Refined) - Moved below the grid */}
+        <div className="space-y-4">
+          <div className="glass-card !p-5">
+            <h2 className="text-base font-semibold mb-4 flex items-center gap-2">
+              <FaBell className="text-accent" /> Notices & Announcements
+            </h2>
+            
+            {notices.length === 0 ? (
+              <div className="flex flex-col items-center justify-center py-8 text-center">
+                <div className="w-12 h-12 rounded-full bg-bg-primary flex items-center justify-center text-text-muted mb-3">
+                  <FaBell size={20} />
+                </div>
+                <p className="text-sm text-text-muted italic">No new notices from faculty.</p>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {notices.map(notice => {
+                  const isRead = readReceipts.includes(notice.id);
+                  return (
+                    <div key={notice.id} className={`p-4 rounded-xl border transition-all ${isRead ? 'bg-bg-primary/30 border-border opacity-60' : 'bg-accent/5 border-accent/20 ring-1 ring-accent/10'}`}>
+                      <div className="flex justify-between items-start mb-2">
+                        <h3 className={`font-bold text-sm ${isRead ? 'text-text-muted' : 'text-text-primary'}`}>{notice.title}</h3>
+                        <span className="text-[10px] text-text-muted font-bold whitespace-nowrap">{new Date(notice.createdAt).toLocaleDateString()}</span>
+                      </div>
+                      <p className={`text-xs mb-3 ${isRead ? 'text-text-muted' : 'text-secondary'}`}>{notice.content}</p>
+                      {!isRead && (
+                        <button 
+                          onClick={() => handleAcknowledgeNotice(notice.id)}
+                          className="w-full py-2 bg-accent text-white rounded-lg text-[10px] font-bold uppercase tracking-wider hover:bg-accent-hover transition-colors flex items-center justify-center gap-2"
+                        >
+                          <FaCheck size={10} /> Confirm Receipt
+                        </button>
+                      )}
+                      {isRead && (
+                        <div className="flex items-center gap-1.5 text-[10px] font-bold text-emerald-500 uppercase">
+                          <FaCheckCircle size={10} /> Confirmed
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+        </div>
 
       {submission && (
         <SubmissionSidebar 

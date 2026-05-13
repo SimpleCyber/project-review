@@ -61,5 +61,22 @@ export interface Submission {
   updatedAt: number;
 }
 
+export interface Notice {
+  id: string;
+  batchId: string;
+  title: string;
+  content: string;
+  createdAt: number;
+  authorId: string;
+}
+
+export interface NoticeReadReceipt {
+  id: string; // Firestore doc ID: noticeId_groupId
+  noticeId: string;
+  groupId: string;
+  batchId: string;
+  readAt: number;
+}
+
 export const GROUP_IDS = ["B1", "B2", "B3", "B4", "B5"] as const;
 export type GroupId = typeof GROUP_IDS[number];

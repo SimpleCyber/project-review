@@ -100,6 +100,7 @@ export default function SubmissionsOverview() {
             <tr>
               <th>Group</th>
               <th>Semester</th>
+              <th>Resubmission</th>
               <th>Status</th>
               <th>Links</th>
               <th>Last Updated</th>
@@ -109,10 +110,10 @@ export default function SubmissionsOverview() {
           <tbody>
             {loading ? (
               Array(5).fill(0).map((_, i) => (
-                <tr key={i}><td colSpan={6}><div className="h-10 skeleton" /></td></tr>
+                <tr key={i}><td colSpan={7}><div className="h-10 skeleton" /></td></tr>
               ))
             ) : filteredSubmissions.length === 0 ? (
-              <tr><td colSpan={6} className="text-center py-12 text-text-muted italic">No submissions found matching filters.</td></tr>
+              <tr><td colSpan={7} className="text-center py-12 text-text-muted italic">No submissions found matching filters.</td></tr>
             ) : (
               filteredSubmissions.map((sub) => (
                 <tr key={sub.id}>
@@ -124,11 +125,18 @@ export default function SubmissionsOverview() {
                     </span>
                   </td>
                   <td>
+                    {sub.resubmissionCount && sub.resubmissionCount > 0 ? (
+                      <span className="badge badge-amber text-[10px] px-1.5 py-0.5">Resubmission {sub.resubmissionCount}</span>
+                    ) : (
+                      <span className="text-text-muted text-[10px]">—</span>
+                    )}
+                  </td>
+                  <td>
                     <span className={`badge ${
                       sub.reviewStatus === 'review_done' ? 'badge-success' : 
                       sub.reviewStatus === 'under_review' ? 'badge-info' : 'badge-warning'
                     }`}>
-                      {sub.reviewStatus === 'review_done' ? 'Done' : 
+                      {sub.reviewStatus === 'review_done' ? 'Accepted' : 
                        sub.reviewStatus === 'under_review' ? 'Reviewing' : 'Pending'}
                     </span>
                   </td>
