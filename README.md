@@ -5,6 +5,7 @@ A modern, robust, and highly transparent Project Submission and Review Managemen
 ## ✨ Key Features
 
 ### 👨‍🎓 For Students
+
 - **Dynamic Dashboard**: View submission status, faculty feedback, and official notices at a glance.
 - **Robust Submission Portal**: Upload core project files (Synopsis, Reports, Black Book, Poster) and phase-wise Review PPTs.
 - **Screenshot Gallery**: Showcase project visuals with an interactive, expandable gallery.
@@ -12,6 +13,7 @@ A modern, robust, and highly transparent Project Submission and Review Managemen
 - **Resubmission Tracking**: Effortlessly re-upload projects after feedback; the system automatically resets status and tracks version history.
 
 ### 👨‍🏫 For Faculty (Admin)
+
 - **Batch Management**: Organize students and projects by year, semester, and batch.
 - **Advanced Submission Review**: A centralized table to view all submissions with "Accepted", "Under Review", and "Pending" statuses.
 - **Resubmission Badging**: Instantly identify re-uploaded projects with "Resubmission X" badges.
@@ -30,17 +32,20 @@ A modern, robust, and highly transparent Project Submission and Review Managemen
 ## 🚀 Getting Started
 
 ### 1. Clone the repository
+
 ```bash
 git clone <repository-url>
 cd project
 ```
 
 ### 2. Install dependencies
+
 ```bash
 npm install
 ```
 
 ### 3. Environment Setup
+
 Create a `.env.local` file in the root directory and add the following configurations:
 
 ```env
@@ -61,20 +66,20 @@ CLOUDINARY_API_SECRET=your_api_secret
 ```
 
 ### 4. Run the development server
+
 ```bash
 npm run dev
 ```
+
 Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
 
 ## 📸 Project Preview
 
-| Admin Dashboard | Student Submission |
-|:---:|:---:|
+|          Admin Dashboard          |           Student Submission           |
+| :--------------------------------: | :------------------------------------: |
 | ![Admin Dashboard](public/admin.png) | ![Student Dashboard](public/student.png) |
 
-*(Note: Replace placeholders with your specific screenshots from the `public/` folder)*
-
-## 📂 Project Structure
+📂 Project Structure
 
 - `app/`: Next.js App Router pages and layouts.
 - `components/`: Reusable UI components (Sidebar, Modals, etc.).
@@ -82,7 +87,9 @@ Open [http://localhost:3000](http://localhost:3000) with your browser to see the
 - `public/`: Static assets and screenshots.
 
 ## 📄 License
+
 Distributed under the MIT License.
 
 ---
+
 Built with ❤️ for improved academic transparency.
