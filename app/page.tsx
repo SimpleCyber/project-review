@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { FaGraduationCap, FaUserTie, FaCheckCircle, FaCode, FaCloudUploadAlt, FaLock, FaGithub, FaStar, FaCodeBranch } from "react-icons/fa";
 import { useState, useEffect } from "react";
+import HelpDeckWidget from "../components/HelpDeckWidget";
 
 export default function LandingPage() {
   const [repoStats, setRepoStats] = useState({ stars: 0, forks: 0 });
@@ -183,6 +184,7 @@ export default function LandingPage() {
           <p className="text-sm text-slate-400">© 2026 Academic Excellence Initiative. Built for Transparency.</p>
         </div>
       </footer>
+      <HelpDeckWidget />
     </div>
   );
 }
