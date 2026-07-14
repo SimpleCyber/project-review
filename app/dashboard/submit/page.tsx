@@ -168,11 +168,6 @@ export default function SubmissionPage() {
       return setError("Please provide a valid GitHub repository URL.");
     }
 
-    if (screenshots.length === 0) {
-      setSaving(false);
-      return setError("Please upload at least one project screenshot.");
-    }
-
     try {
       let newResubmissionCount = submission?.resubmissionCount || 0;
       let newStatus = submission?.reviewStatus || "pending_review";
@@ -342,7 +337,7 @@ export default function SubmissionPage() {
         <div className="glass-card p-4 space-y-4">
           <div className="flex items-center justify-between mb-3">
             <h2 className="text-xl font-bold flex items-center gap-2">
-              <FaImage className="text-blue-500" /> Project Screenshots <span className="text-rose-500 text-sm">*</span>
+              <FaImage className="text-blue-500" /> Project Screenshots 
             </h2>
             <div className="flex items-center gap-4">
               {!isLocked && screenshots.length < 6 && (
